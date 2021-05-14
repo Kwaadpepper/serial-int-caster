@@ -8,7 +8,7 @@ use Kwaadpepper\Serial\Exceptions\SerialCasterException;
  * Encode Integers to a Serial String and decode them
  *
  * Note: Does not support encoding the value 0
- * @author Jérémy Munsch <jeremy.munsch@jeremydev.ovh>
+ * @author Jérémy Munsch <github@jeremydev.ovh>
  */
 final class SerialCaster
 {

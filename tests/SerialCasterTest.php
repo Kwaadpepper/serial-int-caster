@@ -10,12 +10,6 @@ class SerialCasterTest extends TestCase
 {
     private const ALPHANUMERIC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
-    public function __construct()
-    {
-        require_once __DIR__ . "/../vendor/larapack/dd/src/helper.php";
-        parent::__construct();
-    }
-
     public function testSerialEncode()
     {
         $this->assertEquals(
