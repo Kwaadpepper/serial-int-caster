@@ -92,7 +92,7 @@ class SerialCasterTest extends TestCase
 
     public function testSpeedTestOnCouponGeneration()
     {
-        $acceptableTimeInSeconds = 3;
+        $acceptableTimeInSeconds = 4;
         $numberOfCoupons = 99999;
         $coupons = [];
         $start = hrtime(true);

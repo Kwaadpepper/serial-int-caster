@@ -134,6 +134,7 @@ final class SerialCaster
                 self::$shuffler = new FisherYatesShuffler($seed);
             }
             self::$shuffler->shuffle($serial);
+            self::rotateLeft($serial, self::sumString($serial) % strlen($serial));
         }
     }
 
@@ -151,6 +152,7 @@ final class SerialCaster
             if (!self::$shuffler) {
                 self::$shuffler = new FisherYatesShuffler($seed);
             }
+            self::rotateRight($serial, self::sumString($serial) % strlen($serial));
             self::$shuffler->unshuffle($serial);
         }
     }
@@ -232,5 +234,41 @@ final class SerialCaster
     private static function calculateNewBaseLengthFromBase10(int $number, int $base): int
     {
         return (int)(floor(log($number) / log($base)) + 1);
+    }
+
+    public static function rotateLeft(string &$string, int $distance): void
+    {
+        $string = str_split($string);
+        for ($i = 0; $i < $distance; $i++) {
+            $value = $string[$i];
+            unset($string[$i]);
+            $string[] = $value;
+        }
+        $string = implode($string);
+    }
+
+    public static function rotateRight(string &$string, int $distance): void
+    {
+        $string = str_split($string);
+        for ($i = 0; $i < $distance; $i++) {
+            array_unshift($string, array_pop($string));
+        }
+        $string = implode($string);
+    }
+
+    /**
+     * Sum all string chars values
+     *
+     * @param string $string
+     * @return int
+     */
+    public static function sumString(string $string): int
+    {
+        $o = 0;
+        $length = \strlen($string);
+        for ($i = $length - 1; $i >= 0; $i--) {
+            $o += ord($string[$i]);
+        }
+        return $o;
     }
 }
