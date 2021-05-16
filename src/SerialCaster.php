@@ -100,7 +100,7 @@ final class SerialCaster
         return $outNumber;
     }
 
-    private static function init(int $number, int $length, string $chars)
+    private static function init(int $number, int $length, string $chars): void
     {
         self::setChars($chars);
         if (strlen(self::$chars) < 2) {
@@ -127,7 +127,7 @@ final class SerialCaster
      * @param string $serial
      * @return void
      */
-    private static function shuffle(int $seed, string &$serial)
+    private static function shuffle(int $seed, string &$serial): void
     {
         if ($seed) {
             if (!self::$shuffler) {
@@ -145,7 +145,7 @@ final class SerialCaster
      * @param string $serial
      * @return void
      */
-    private static function unshuffle(int $seed, string &$serial)
+    private static function unshuffle(int $seed, string &$serial): void
     {
         if ($seed) {
             if (!self::$shuffler) {
@@ -155,7 +155,7 @@ final class SerialCaster
         }
     }
 
-    private static function setChars(string $chars)
+    private static function setChars(string $chars): void
     {
         if (strlen($chars)) {
             // Keep a string of unique chars
@@ -229,7 +229,7 @@ final class SerialCaster
      * @return int
      * @url https://www.geeksforgeeks.org/given-number-n-decimal-base-find-number-digits-base-base-b/
      */
-    private static function calculateNewBaseLengthFromBase10(int $number, int $base)
+    private static function calculateNewBaseLengthFromBase10(int $number, int $base): int
     {
         return (int)(floor(log($number) / log($base)) + 1);
     }
