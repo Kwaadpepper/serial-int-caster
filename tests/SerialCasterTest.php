@@ -74,9 +74,11 @@ class SerialCasterTest extends TestCase
 
     public function testEncodeAndDecodeWithRandomValues()
     {
+        srand();
         $loops = rand(50, 70);
         for ($i = 0; $i <= $loops; $i++) {
-            $randomInteger = rand(0, 9999999);
+            srand();
+            $randomInteger = rand(0, 999999);
             $this->assertEquals(
                 $randomInteger,
                 SerialCaster::decode(
@@ -95,7 +97,9 @@ class SerialCasterTest extends TestCase
         $coupons = [];
         $start = hrtime(true);
         for ($i = 0; $i <= $numberOfCoupons; $i++) {
-            $coupons[] = SerialCaster::encode($i, self::SEED, self::LENGTH, self::ALPHANUMERIC);
+            srand();
+            $randomInteger = rand(0, $numberOfCoupons);
+            $coupons[] = SerialCaster::encode($randomInteger, self::SEED, self::LENGTH, self::ALPHANUMERIC);
         }
         $endtime = hrtime(true);
         $this->assertLessThan(
@@ -117,7 +121,9 @@ class SerialCasterTest extends TestCase
         $coupons = [];
         $decodedCoupons = [];
         for ($i = 1; $i <= $numberOfCoupons; $i++) {
-            $coupons[] = SerialCaster::encode($i, self::SEED, self::LENGTH, self::ALPHANUMERIC);
+            srand();
+            $randomInteger = rand(1, $numberOfCoupons);
+            $coupons[] = SerialCaster::encode($randomInteger, self::SEED, self::LENGTH, self::ALPHANUMERIC);
         }
 
         $numberOfCoupons = count($coupons);
