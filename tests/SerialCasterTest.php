@@ -9,11 +9,13 @@ use PHPUnit\Framework\TestCase;
 class SerialCasterTest extends TestCase
 {
     private const ALPHANUMERIC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    private const LENGTH = 6;
+    private const SEED = 1492;
 
     public function testSerialEncode()
     {
         $this->assertEquals(
-            SerialCaster::encode(14776335, 6, self::ALPHANUMERIC),
+            SerialCaster::encode(14776335, 0, self::LENGTH, self::ALPHANUMERIC),
             '1bzzzO',
             //  phpcs:ignore Generic.Files.LineLength.TooLong
             'Encoding 14776335(10) on base with ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 should give 1bzzzO'
@@ -22,7 +24,7 @@ class SerialCasterTest extends TestCase
 
     public function testSerialDecode()
     {
-        $this->assertEquals(SerialCaster::decode('000HLC', self::ALPHANUMERIC), 666);
+        $this->assertEquals(SerialCaster::decode('000HLC', 0, self::ALPHANUMERIC), 666);
     }
 
     public function testBreakIfSerialHasInvalidChar()
@@ -31,7 +33,7 @@ class SerialCasterTest extends TestCase
             SerialCasterException::class,
             'If serial has an invalid char it should throw an exception'
         );
-        SerialCaster::decode('*', self::ALPHANUMERIC);
+        SerialCaster::decode('*', self::SEED, self::ALPHANUMERIC);
     }
 
     public function testBreakIfDecodedIsTooShort()
@@ -40,7 +42,7 @@ class SerialCasterTest extends TestCase
             SerialCasterException::class,
             'If the decoded serial is too short (<=2) it should throw an exception'
         );
-        SerialCaster::decode('A', self::ALPHANUMERIC);
+        SerialCaster::decode('A', self::SEED, self::ALPHANUMERIC);
     }
 
     public function testBreakIfDecodedCharListIsDifferentThanTheOneUsedForEncoding()
@@ -49,21 +51,25 @@ class SerialCasterTest extends TestCase
             SerialCasterException::class,
             'If the decoded serial has a different char list than the provided one'
         );
-        SerialCaster::decode(SerialCaster::encode(14776335, 26, '01'), self::ALPHANUMERIC);
+        SerialCaster::decode(
+            SerialCaster::encode(14776335, self::SEED, 26, '01'),
+            self::SEED,
+            self::ALPHANUMERIC
+        );
     }
 
     public function testBreakIfLengthIsNotHighEnough()
     {
         $this->expectException(SerialCasterException::class);
         // This should break
-        SerialCaster::encode(14776336, 6, self::ALPHANUMERIC);
+        SerialCaster::encode(14776336, self::SEED, self::LENGTH, self::ALPHANUMERIC);
     }
 
     public function testBreakIfCharListIsTooShort()
     {
         $this->expectException(SerialCasterException::class);
         // This should break
-        SerialCaster::encode(14776336, 6, '1');
+        SerialCaster::encode(14776336, self::SEED, self::LENGTH, '1');
     }
 
     public function testEncodeAndDecodeWithRandomValues()
@@ -74,7 +80,8 @@ class SerialCasterTest extends TestCase
             $this->assertEquals(
                 $randomInteger,
                 SerialCaster::decode(
-                    SerialCaster::encode($randomInteger, 6, self::ALPHANUMERIC),
+                    SerialCaster::encode($randomInteger, self::SEED, self::LENGTH, self::ALPHANUMERIC),
+                    self::SEED,
                     self::ALPHANUMERIC
                 )
             );
@@ -83,12 +90,12 @@ class SerialCasterTest extends TestCase
 
     public function testSpeedTestOnCouponGeneration()
     {
-        $acceptableTimeInSeconds = 2;
+        $acceptableTimeInSeconds = 3;
         $numberOfCoupons = 99999;
         $coupons = [];
         $start = hrtime(true);
         for ($i = 0; $i <= $numberOfCoupons; $i++) {
-            $coupons[] = SerialCaster::encode($i, 7, self::ALPHANUMERIC);
+            $coupons[] = SerialCaster::encode($i, self::SEED, self::LENGTH, self::ALPHANUMERIC);
         }
         $endtime = hrtime(true);
         $this->assertLessThan(
@@ -105,18 +112,18 @@ class SerialCasterTest extends TestCase
 
     public function testSpeedTestOnCouponDecode()
     {
-        $acceptableTimeInSeconds = 3;
+        $acceptableTimeInSeconds = 4;
         $numberOfCoupons = 99999;
         $coupons = [];
         $decodedCoupons = [];
         for ($i = 1; $i <= $numberOfCoupons; $i++) {
-            $coupons[] = SerialCaster::encode($i, 7, self::ALPHANUMERIC);
+            $coupons[] = SerialCaster::encode($i, self::SEED, self::LENGTH, self::ALPHANUMERIC);
         }
 
         $numberOfCoupons = count($coupons);
         $start = hrtime(true);
         for ($i = 0; $i < $numberOfCoupons; $i++) {
-            $decodedCoupons[] = SerialCaster::decode($coupons[$i], self::ALPHANUMERIC);
+            $decodedCoupons[] = SerialCaster::decode($coupons[$i], self::SEED, self::ALPHANUMERIC);
         }
         $endtime = hrtime(true);
         $this->assertLessThan(

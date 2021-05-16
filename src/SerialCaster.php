@@ -13,9 +13,16 @@ use Kwaadpepper\Serial\Exceptions\SerialCasterException;
 final class SerialCaster
 {
 
+    /**
+     * Base 10 bytes
+     */
     private const BASE10 = '0123456789';
 
-    private static $length = 6;
+    /** @var int */
+    private static $seed;
+
+    /** @var \Kwaadpepper\Serial\FisherYatesShuffler */
+    private static $shuffler;
 
     /**
      * Available chars for Serial generation
@@ -27,13 +34,16 @@ final class SerialCaster
     /**
      * Encode an integer using chars generating a serial of a minimum length
      *
-     * @param integer $number
-     * @param integer $length
-     * @param string $chars
-     * @return string
+     * Note: if $seed is equal to 0 it wont be used
+     *
+     * @param integer $number The number to encode in the serial string
+     * @param integer $seed   The seed used to suffle the serial bytes order
+     * @param integer $length The serial desired length
+     * @param string  $chars  The bytes used to generate the serial string
+     * @return string         The serial
      * @throws SerialCasterException if a config error happens
      */
-    public static function encode(int $number, int $length = 6, string $chars = ''): string
+    public static function encode(int $number, int $seed = 0, int $length = 6, string $chars = ''): string
     {
         $outString = (string)$number;
         self::init($number, $length, $chars);
@@ -45,20 +55,25 @@ final class SerialCaster
             self::$chars[0],
             \STR_PAD_LEFT
         );
+        self::shuffle($seed, $outString);
         return $outString;
     }
 
     /**
      * Decode an integer using chars
      *
-     * @param string $serial
-     * @param string $chars
-     * @return integer
+     * Note: if $seed is equal to 0 it wont be used
+     *
+     * @param string   $serial The serial ton decode
+     * @param int      $seed   The seed used to randomize the serial
+     * @param string   $chars  The bytes used to generate the serial
+     * @return integer         The number encoded in the serial
      * @throws SerialCasterException if a wrong serial or charlist is given
      */
-    public static function decode(string $serial, string $chars = ''): int
+    public static function decode(string $serial, int $seed = 0, string $chars = ''): int
     {
         self::setChars($chars);
+        self::unshuffle($seed, $serial);
         $serialLength = strlen($serial);
         $outNumber = self::convBase($serial, self::$chars, self::BASE10);
         for ($i = 0; $i < $serialLength; $i++) {
@@ -95,12 +110,48 @@ final class SerialCaster
             throw new SerialCasterException(sprintf('%s can have a minimum length of 99 unique chars', __CLASS__));
         }
         $minimumLength = self::calculateNewBaseLengthFromBase10($number, strlen(self::$chars)) + 2;
-        if ((self::$length = $length) < $minimumLength) {
+        if ($length < $minimumLength) {
             throw new SerialCasterException(sprintf(
                 '%s need a minimum length of %d',
                 __CLASS__,
                 $minimumLength
             ));
+        }
+    }
+
+    /**
+     * If seed is different than 0, then shuffles the serial bytes
+     * using the seed
+     *
+     * @param integer $seed
+     * @param string $serial
+     * @return void
+     */
+    private static function shuffle(int $seed, string &$serial)
+    {
+        if ($seed) {
+            if (!self::$shuffler) {
+                self::$shuffler = new FisherYatesShuffler($seed);
+            }
+            self::$shuffler->shuffle($serial);
+        }
+    }
+
+    /**
+     * If seed is different than 0, then unshuffles the serial bytes
+     * using the seed
+     *
+     * @param integer $seed
+     * @param string $serial
+     * @return void
+     */
+    private static function unshuffle(int $seed, string &$serial)
+    {
+        if ($seed) {
+            if (!self::$shuffler) {
+                self::$shuffler = new FisherYatesShuffler($seed);
+            }
+            self::$shuffler->unshuffle($serial);
         }
     }
 
