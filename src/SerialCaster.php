@@ -12,14 +12,10 @@ use Kwaadpepper\Serial\Exceptions\SerialCasterException;
  */
 final class SerialCaster
 {
-
     /**
      * Base 10 bytes
      */
     private const BASE10 = '0123456789';
-
-    /** @var int */
-    private static $seed;
 
     /** @var \Kwaadpepper\Serial\FisherYatesShuffler */
     private static $shuffler;
@@ -36,12 +32,12 @@ final class SerialCaster
      *
      * Note: if $seed is equal to 0 it wont be used
      *
-     * @param integer $number The number to encode in the serial string
-     * @param integer $seed   The seed used to suffle the serial bytes order
-     * @param integer $length The serial desired length
-     * @param string  $chars  The bytes used to generate the serial string
+     * @param integer $number The number to encode in the serial string.
+     * @param integer $seed   The seed used to suffle the serial bytes order.
+     * @param integer $length The serial desired length.
+     * @param string  $chars  The bytes used to generate the serial string.
      * @return string         The serial
-     * @throws SerialCasterException if a config error happens
+     * @throws \Kwaadpepper\Serial\Exceptions\SerialCasterException If a config error happens.
      */
     public static function encode(int $number, int $seed = 0, int $length = 6, string $chars = ''): string
     {
@@ -49,7 +45,7 @@ final class SerialCaster
         self::init($number, $length, $chars);
         $charsCount = str_pad(strlen(self::$chars), 2, '0', \STR_PAD_LEFT);
         $outString .= $charsCount;
-        $outString = str_pad(
+        $outString  = str_pad(
             self::convBase($outString, self::BASE10, self::$chars),
             $length,
             self::$chars[0],
@@ -64,18 +60,18 @@ final class SerialCaster
      *
      * Note: if $seed is equal to 0 it wont be used
      *
-     * @param string   $serial The serial ton decode
-     * @param int      $seed   The seed used to randomize the serial
-     * @param string   $chars  The bytes used to generate the serial
+     * @param string  $serial The serial ton decode.
+     * @param integer $seed   The seed used to randomize the serial.
+     * @param string  $chars  The bytes used to generate the serial.
      * @return integer         The number encoded in the serial
-     * @throws SerialCasterException if a wrong serial or charlist is given
+     * @throws SerialCasterException If a wrong serial or charlist is given.
      */
     public static function decode(string $serial, int $seed = 0, string $chars = ''): int
     {
         self::setChars($chars);
         self::unshuffle($seed, $serial);
         $serialLength = strlen($serial);
-        $outNumber = self::convBase($serial, self::$chars, self::BASE10);
+        $outNumber    = self::convBase($serial, self::$chars, self::BASE10);
         for ($i = 0; $i < $serialLength; $i++) {
             if (strpos(self::$chars, $serial[$i]) === false) {
                 throw new SerialCasterException(sprintf(
@@ -89,7 +85,7 @@ final class SerialCaster
             throw new SerialCasterException(sprintf('%s::decode un code série invalide à été donné', __CLASS__));
         }
         $charsCount = (int)substr($outNumber, -2);
-        $outNumber = (int)substr($outNumber, 0, strlen($outNumber) - 2);
+        $outNumber  = (int)substr($outNumber, 0, strlen($outNumber) - 2);
         if ($charsCount !== strlen(self::$chars)) {
             throw new SerialCasterException(sprintf(
                 // phpcs:ignore Generic.Files.LineLength.TooLong
@@ -100,8 +96,20 @@ final class SerialCaster
         return $outNumber;
     }
 
+    /**
+     * Initialize SerialCaster
+     *
+     * @param integer $number
+     * @param integer $length
+     * @param string  $chars
+     * @return void
+     * @throws \Kwaadpepper\Serial\Exceptions\SerialCasterException If parameters are wrong.
+     */
     private static function init(int $number, int $length, string $chars): void
     {
+        if ($length <= 0) {
+            throw new SerialCasterException(sprintf('%s need a length of minimum 1', __CLASS__));
+        }
         self::setChars($chars);
         if (strlen(self::$chars) < 2) {
             throw new SerialCasterException(sprintf('%s need a minimum length of 2 unique chars', __CLASS__));
@@ -124,7 +132,7 @@ final class SerialCaster
      * using the seed
      *
      * @param integer $seed
-     * @param string $serial
+     * @param string  $serial
      * @return void
      */
     private static function shuffle(int $seed, string &$serial): void
@@ -143,7 +151,7 @@ final class SerialCaster
      * using the seed
      *
      * @param integer $seed
-     * @param string $serial
+     * @param string  $serial
      * @return void
      */
     private static function unshuffle(int $seed, string &$serial): void
@@ -157,22 +165,27 @@ final class SerialCaster
         }
     }
 
+    /**
+     * Setup char dict
+     *
+     * @param string $chars
+     * @return void
+     */
     private static function setChars(string $chars): void
     {
         if (strlen($chars)) {
-            // Keep a string of unique chars
+            // Keep a string of unique chars.
             self::$chars = count_chars($chars, 3);
+            return;
         }
-        if (!strlen(self::$chars)) {
-            $inits = [
-                [ord('a'), ord('z')],
-                [ord('A'), ord('Z')],
-                [ord('0'), ord('9')],
-            ];
-            foreach ($inits as $init) {
-                for ($i = $init[0]; $i <= $init[1]; $i++) {
-                    self::$chars .= chr($i);
-                }
+        $inits = [
+            [ord('a'), ord('z')],
+            [ord('A'), ord('Z')],
+            [ord('0'), ord('9')],
+        ];
+        foreach ($inits as $init) {
+            for ($i = $init[0]; $i <= $init[1]; $i++) {
+                self::$chars .= chr($i);
             }
         }
     }
@@ -191,13 +204,13 @@ final class SerialCaster
         if ($fromBaseInput == $toBaseInput) {
             return $numberInput;
         }
-        $fromBase = str_split($fromBaseInput, 1);
-        $toBase = str_split($toBaseInput, 1);
-        $number = str_split($numberInput, 1);
-        $fromLen = strlen($fromBaseInput);
-        $toLen = strlen($toBaseInput);
+        $fromBase  = str_split($fromBaseInput, 1);
+        $toBase    = str_split($toBaseInput, 1);
+        $number    = str_split($numberInput, 1);
+        $fromLen   = strlen($fromBaseInput);
+        $toLen     = strlen($toBaseInput);
         $numberLen = strlen($numberInput);
-        $retval = '';
+        $retval    = '';
         if ($toBaseInput == self::BASE10) {
             $retval = 0;
             for ($i = 1; $i <= $numberLen; $i++) {
@@ -228,7 +241,7 @@ final class SerialCaster
      *
      * @param integer $number
      * @param integer $base
-     * @return int
+     * @return integer
      * @url https://www.geeksforgeeks.org/given-number-n-decimal-base-find-number-digits-base-base-b/
      */
     private static function calculateNewBaseLengthFromBase10(int $number, int $base): int
@@ -236,6 +249,13 @@ final class SerialCaster
         return (int)(floor(log($number) / log($base)) + 1);
     }
 
+    /**
+     * Move chars in a string from left to right
+     *
+     * @param string  $string
+     * @param integer $distance
+     * @return void
+     */
     public static function rotateLeft(string &$string, int $distance): void
     {
         $string = str_split($string);
@@ -247,6 +267,13 @@ final class SerialCaster
         $string = implode($string);
     }
 
+    /**
+     * Move chars in a string from right to left
+     *
+     * @param string  $string
+     * @param integer $distance
+     * @return void
+     */
     public static function rotateRight(string &$string, int $distance): void
     {
         $string = str_split($string);
@@ -260,11 +287,11 @@ final class SerialCaster
      * Sum all string chars values
      *
      * @param string $string
-     * @return int
+     * @return integer
      */
     public static function sumString(string $string): int
     {
-        $o = 0;
+        $o      = 0;
         $length = \strlen($string);
         for ($i = $length - 1; $i >= 0; $i--) {
             $o += ord($string[$i]);

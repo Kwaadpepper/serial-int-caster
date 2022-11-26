@@ -2,6 +2,8 @@
 
 namespace Kwaadpepper\Serial;
 
+use mersenne_twister\twister;
+
 /**
  *
  * Fisher Yates Seeded shuffle using improved algorithm and seed
@@ -12,41 +14,99 @@ namespace Kwaadpepper\Serial;
  */
 class FisherYatesShuffler
 {
+    /** @var \mersenne_twister\twister $twister */
+    private $twister;
 
-    /** @var int $seed */
+    /** @var string $seed */
     private $seed;
 
+    /**
+     * FisherYatesShuffler
+     * @param integer $seed
+     * @return void
+     */
     public function __construct(int $seed)
     {
-        $this->seed = $seed;
+        $this->seed    = $seed;
+        $this->twister = new twister();
     }
 
+    /**
+     * Shuffle a string
+     *
+     * @param string $string
+     * @return void
+     */
     public function shuffle(string &$string)
     {
-        mt_srand($this->seed);
+        $this->twister->init_with_integer($this->seed);
         $length = strlen($string);
         for ($i = $length - 1; $i >= 1; $i--) {
-            $j = mt_rand(0, $i);
-            $t = $string[$j];
+            $j          = $this->random(0, $i);
+            $t          = $string[$j];
             $string[$j] = $string[$i];
             $string[$i] = $t;
         }
     }
 
+    /**
+     * Unshuffle a string
+     *
+     * @param string $string
+     * @return void
+     */
     public function unshuffle(string &$string)
     {
-        mt_srand($this->seed);
-        $length = strlen($string);
+        $this->twister->init_with_integer($this->seed);
+        $length  = strlen($string);
         $indices = [];
         for ($i = $length - 1; $i >= 1; $i--) {
-            $indices[$i] = mt_rand(0, $i);
+            $indices[$i] = $this->random(0, $i);
         }
 
         $indices = array_reverse($indices, true);
         foreach ($indices as $i => $j) {
-            $t = $string[$j];
+            $t          = $string[$j];
             $string[$j] = $string[$i];
             $string[$i] = $t;
+        }
+    }
+
+    /**
+     * Generate a random number like Math.random between bounds
+     *
+     * @param integer $min
+     * @param integer $max
+     * @return integer
+     */
+    private function random(int $min, int $max): int
+    {
+        $this->checkBounds($min, $max);
+        return $min + (int)($this->rand() * (($max - $min) + 1));
+    }
+
+    /**
+     * Equivalent to Math.random using MersenneTwister int32
+     *
+     * @return float
+     */
+    private function rand(): float
+    {
+        return $this->twister->int32() / 0xFFFFFFFF;
+    }
+
+    /**
+     * Assert min is lower or equals to max
+     *
+     * @param integer $min
+     * @param integer $max
+     * @return void
+     * @throws \RuntimeException If min is lower than max.
+     */
+    private function checkBounds(int $min, int $max)
+    {
+        if ($min > $max) {
+            throw new \RuntimeException("lower bound exceeds upper bound: $min > $max");
         }
     }
 }

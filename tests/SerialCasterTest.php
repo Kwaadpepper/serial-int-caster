@@ -9,9 +9,14 @@ use PHPUnit\Framework\TestCase;
 class SerialCasterTest extends TestCase
 {
     private const ALPHANUMERIC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    private const LENGTH = 6;
-    private const SEED = 1492;
+    private const LENGTH       = 6;
+    private const SEED         = 1492;
 
+    /**
+     * Test integer encodes to string
+     *
+     * @return void
+     */
     public function testSerialEncode()
     {
         $this->assertEquals(
@@ -22,11 +27,21 @@ class SerialCasterTest extends TestCase
         );
     }
 
+    /**
+     * Tests String decode to integer
+     *
+     * @return void
+     */
     public function testSerialDecode()
     {
         $this->assertEquals(SerialCaster::decode('000HLC', 0, self::ALPHANUMERIC), 666);
     }
 
+    /**
+     * Tests if a serial has a char not in dictm it throws an error
+     *
+     * @return void
+     */
     public function testBreakIfSerialHasInvalidChar()
     {
         $this->expectException(
@@ -36,6 +51,11 @@ class SerialCasterTest extends TestCase
         SerialCaster::decode('*', self::SEED, self::ALPHANUMERIC);
     }
 
+    /**
+     * Tests if a serial is too shortm it throws and error
+     *
+     * @return void
+     */
     public function testBreakIfDecodedIsTooShort()
     {
         $this->expectException(
@@ -45,6 +65,11 @@ class SerialCasterTest extends TestCase
         SerialCaster::decode('A', self::SEED, self::ALPHANUMERIC);
     }
 
+    /**
+     * Tests throws and error if using different dicts between encode and decode
+     *
+     * @return void
+     */
     public function testBreakIfDecodedCharListIsDifferentThanTheOneUsedForEncoding()
     {
         $this->expectException(
@@ -58,20 +83,35 @@ class SerialCasterTest extends TestCase
         );
     }
 
+    /**
+     * Tests if encode would throw an error if serial length is not high enough.
+     *
+     * @return void
+     */
     public function testBreakIfLengthIsNotHighEnough()
     {
         $this->expectException(SerialCasterException::class);
-        // This should break
+        // This should break.
         SerialCaster::encode(14776336, self::SEED, self::LENGTH, self::ALPHANUMERIC);
     }
 
+    /**
+     * Tests if encode would throw an error if dict is not long enough.
+     *
+     * @return void
+     */
     public function testBreakIfCharListIsTooShort()
     {
         $this->expectException(SerialCasterException::class);
-        // This should break
+        // This should break.
         SerialCaster::encode(14776336, self::SEED, self::LENGTH, '1');
     }
 
+    /**
+     * Tests encode and decode random values
+     *
+     * @return void
+     */
     public function testEncodeAndDecodeWithRandomValues()
     {
         srand();
@@ -90,16 +130,21 @@ class SerialCasterTest extends TestCase
         }
     }
 
+    /**
+     * Tests speed creating coupons.
+     *
+     * @return void
+     */
     public function testSpeedTestOnCouponGeneration()
     {
         $acceptableTimeInSeconds = 4;
-        $numberOfCoupons = 99999;
-        $coupons = [];
-        $start = hrtime(true);
+        $numberOfCoupons         = 999;
+        $coupons                 = [];
+        $start                   = hrtime(true);
         for ($i = 0; $i <= $numberOfCoupons; $i++) {
             srand();
             $randomInteger = rand(0, $numberOfCoupons);
-            $coupons[] = SerialCaster::encode($randomInteger, self::SEED, self::LENGTH, self::ALPHANUMERIC);
+            $coupons[]     = SerialCaster::encode($randomInteger, self::SEED, self::LENGTH, self::ALPHANUMERIC);
         }
         $endtime = hrtime(true);
         $this->assertLessThan(
@@ -114,20 +159,25 @@ class SerialCasterTest extends TestCase
         );
     }
 
+    /**
+     * Tests speed reading coupons.
+     *
+     * @return void
+     */
     public function testSpeedTestOnCouponDecode()
     {
         $acceptableTimeInSeconds = 4;
-        $numberOfCoupons = 99999;
-        $coupons = [];
-        $decodedCoupons = [];
+        $numberOfCoupons         = 999;
+        $coupons                 = [];
+        $decodedCoupons          = [];
         for ($i = 1; $i <= $numberOfCoupons; $i++) {
             srand();
             $randomInteger = rand(1, $numberOfCoupons);
-            $coupons[] = SerialCaster::encode($randomInteger, self::SEED, self::LENGTH, self::ALPHANUMERIC);
+            $coupons[]     = SerialCaster::encode($randomInteger, self::SEED, self::LENGTH, self::ALPHANUMERIC);
         }
 
         $numberOfCoupons = count($coupons);
-        $start = hrtime(true);
+        $start           = hrtime(true);
         for ($i = 0; $i < $numberOfCoupons; $i++) {
             $decodedCoupons[] = SerialCaster::decode($coupons[$i], self::SEED, self::ALPHANUMERIC);
         }
