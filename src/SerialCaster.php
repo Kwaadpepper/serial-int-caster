@@ -256,7 +256,7 @@ final class SerialCaster
      * @param integer $distance
      * @return void
      */
-    public static function rotateLeft(string &$string, int $distance): void
+    private static function rotateLeft(string &$string, int $distance): void
     {
         $string = str_split($string);
         for ($i = 0; $i < $distance; $i++) {
@@ -274,7 +274,7 @@ final class SerialCaster
      * @param integer $distance
      * @return void
      */
-    public static function rotateRight(string &$string, int $distance): void
+    private static function rotateRight(string &$string, int $distance): void
     {
         $string = str_split($string);
         for ($i = 0; $i < $distance; $i++) {
@@ -289,7 +289,7 @@ final class SerialCaster
      * @param string $string
      * @return integer
      */
-    public static function sumString(string $string): int
+    private static function sumString(string $string): int
     {
         $o      = 0;
         $length = \strlen($string);
