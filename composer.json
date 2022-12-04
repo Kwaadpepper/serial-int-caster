@@ -29,7 +29,9 @@
         }
     },
     "scripts": {
-        "test": "vendor/bin/phpunit"
+        "test": "vendor/bin/phpunit",
+        "testcoverage": "vendor/bin/phpunit --test unit --coverage-html coverage",
+        "generateList": "@php tests/generateTestList.php"
     },
     "config": {
         "allow-plugins": {

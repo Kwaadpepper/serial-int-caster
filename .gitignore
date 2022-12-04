@@ -7,3 +7,7 @@
 # Ignore Gradle build output directory
 build
 .vscode
+
+# ignore CSV test files
+serialTestFilePhp.csv
+serialTestFileKotlin.csv
