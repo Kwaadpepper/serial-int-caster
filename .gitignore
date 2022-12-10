@@ -1,11 +1,10 @@
 /vendor/
 .phpunit.result.cache
+.phpunit.cache
 
-# Ignore Gradle project-specific cache directory
-.gradle
+# Ignore coverage
+coverage
 
-# Ignore Gradle build output directory
-build
 .vscode
 
 # ignore CSV test files

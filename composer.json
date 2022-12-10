@@ -30,7 +30,7 @@
     },
     "scripts": {
         "test": "vendor/bin/phpunit",
-        "testcoverage": "vendor/bin/phpunit --test unit --coverage-html coverage",
+        "testcoverage": "vendor/bin/phpunit --coverage-html coverage",
         "generateList": "@php tests/generateTestList.php"
     },
     "config": {
