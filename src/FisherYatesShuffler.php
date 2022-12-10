@@ -81,7 +81,6 @@ class FisherYatesShuffler
      */
     private function random(int $min, int $max): int
     {
-        $this->checkBounds($min, $max);
         return $min + (int)($this->rand() * (($max - $min) + 1));
     }
 
@@ -93,20 +92,5 @@ class FisherYatesShuffler
     private function rand(): float
     {
         return $this->twister->int32() / 0xFFFFFFFF;
-    }
-
-    /**
-     * Assert min is lower or equals to max
-     *
-     * @param integer $min
-     * @param integer $max
-     * @return void
-     * @throws \RuntimeException If min is lower than max.
-     */
-    private function checkBounds(int $min, int $max)
-    {
-        if ($min > $max) {
-            throw new \RuntimeException("lower bound exceeds upper bound: $min > $max");
-        }
     }
 }
