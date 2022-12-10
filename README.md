@@ -2,8 +2,11 @@
 
 This Library allows to encode an integer to a serial number and the other way around decode it to retrieve the integer.
 
-## Test are given with phpuit
-Just run phpunit
+## Unit tests
+
+ Unit tests are available :
+ - `composer install`
+ - `composer run test`
 
 ## Usage
 ```composer install  kwaadpepper/serial-int-caster ```
