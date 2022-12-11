@@ -138,9 +138,7 @@ final class SerialCaster
     private static function shuffle(int $seed, string &$serial): void
     {
         if ($seed) {
-            if (!self::$shuffler) {
-                self::$shuffler = new FisherYatesShuffler($seed);
-            }
+            self::setupShuffle($seed);
             self::$shuffler->shuffle($serial);
             self::rotateLeft($serial, self::sumString($serial) % strlen($serial));
         }
@@ -157,11 +155,26 @@ final class SerialCaster
     private static function unshuffle(int $seed, string &$serial): void
     {
         if ($seed) {
-            if (!self::$shuffler) {
-                self::$shuffler = new FisherYatesShuffler($seed);
-            }
+            self::setupShuffle($seed);
             self::rotateRight($serial, self::sumString($serial) % strlen($serial));
             self::$shuffler->unshuffle($serial);
+        }
+    }
+
+    /**
+     * Setup shuffle
+     *
+     * @param integer $seed
+     * @return void
+     */
+    private static function setupShuffle(int $seed): void
+    {
+        if (!self::$shuffler) {
+            self::$shuffler = new FisherYatesShuffler($seed);
+            return;
+        }
+        if (self::$shuffler->seed() !== $seed) {
+            self::$shuffler = new FisherYatesShuffler($seed);
         }
     }
 

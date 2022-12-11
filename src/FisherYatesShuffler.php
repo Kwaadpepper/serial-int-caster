@@ -32,6 +32,16 @@ class FisherYatesShuffler
     }
 
     /**
+     * Get the actual seed.
+     *
+     * @return integer
+     */
+    public function seed(): int
+    {
+        return $this->seed;
+    }
+
+    /**
      * Shuffle a string
      *
      * @param string $string
