@@ -8,6 +8,11 @@ This Library allows to encode an integer to a serial number and the other way ar
  - `composer install`
  - `composer run test`
 
+ Generate Kotlin test file
+ `composer run generateList -- --lines=9999`
+ To generate csv file to the kotlin unit tests put this file in its root folder and run unit tests.
+ https://github.com/Kwaadpepper/serial-int-caster-kotlin
+
 ## Usage
 ```composer install  kwaadpepper/serial-int-caster ```
 
