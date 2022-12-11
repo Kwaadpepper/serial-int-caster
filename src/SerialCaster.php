@@ -183,11 +183,14 @@ final class SerialCaster
             [ord('A'), ord('Z')],
             [ord('0'), ord('9')],
         ];
+
+        self::$chars = "";
         foreach ($inits as $init) {
             for ($i = $init[0]; $i <= $init[1]; $i++) {
                 self::$chars .= chr($i);
             }
         }
+        self::$chars = count_chars(self::$chars, 3);
     }
 
     /**

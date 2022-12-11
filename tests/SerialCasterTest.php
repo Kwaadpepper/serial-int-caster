@@ -28,6 +28,21 @@ class SerialCasterTest extends TestCase
     }
 
     /**
+     * Test integer encodes to string with default dict
+     *
+     * @return void
+     */
+    public function testSerialEncodeWithDefaultDict()
+    {
+        $this->assertEquals(
+            SerialCaster::encode(14776335, 0, self::LENGTH),
+            '1bzzzO',
+            //  phpcs:ignore Generic.Files.LineLength.TooLong
+            'Encoding 14776335(10) on base with ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 should give 1bzzzO'
+        );
+    }
+
+    /**
      * Tests String decode to integer
      *
      * @return void
@@ -35,6 +50,16 @@ class SerialCasterTest extends TestCase
     public function testSerialDecode()
     {
         $this->assertEquals(SerialCaster::decode('000HLC', 0, self::ALPHANUMERIC), 666);
+    }
+
+    /**
+     * Tests String decode to integer wth default dict
+     *
+     * @return void
+     */
+    public function testSerialDecodeWithDefaultDict()
+    {
+        $this->assertEquals(SerialCaster::decode('000HLC', 0), 666);
     }
 
     /**
