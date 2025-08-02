@@ -309,10 +309,6 @@ final class SerialCaster
      */
     private static function sumString(string $string): int
     {
-        $sum = 0;
-        foreach (str_split($string) as $char) {
-            $sum += ord($char);
-        }
-        return $sum;
+        return array_sum(array_map('ord', str_split($string)));
     }
 }
