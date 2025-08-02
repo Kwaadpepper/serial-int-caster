@@ -66,9 +66,10 @@ final class SerialCaster
         self::setChars($chars);
         self::unshuffle($seed, $serial);
         $serialLength = strlen($serial);
-        $outNumber    = self::convBase($serial, self::$chars, self::BASE10);
+
+        $charsMap = array_flip(str_split(self::$chars));
         for ($i = 0; $i < $serialLength; $i++) {
-            if (strpos(self::$chars, $serial[$i]) === false) {
+            if (!isset($charsMap[$serial[$i]])) {
                 throw new SerialCasterException(sprintf(
                     '%s::decode un caractère non valide `%s` est présent',
                     __CLASS__,
@@ -76,14 +77,18 @@ final class SerialCaster
                 ));
             }
         }
+
+        $outNumber = self::convBase($serial, self::$chars, self::BASE10);
+
         if (strlen($outNumber) < 3) {
             throw new SerialCasterException(sprintf('%s::decode un code série invalide à été donné', __CLASS__));
         }
+
         $charsCount = (int)substr($outNumber, -2);
         $outNumber  = (int)substr($outNumber, 0, strlen($outNumber) - 2);
+
         if ($charsCount !== strlen(self::$chars)) {
             throw new SerialCasterException(sprintf(
-                // phpcs:ignore Generic.Files.LineLength.TooLong
                 '%s::decode la liste de caractère pour décoder ne semble pas correspondre à celui utilisé pour l\'encodage',
                 __CLASS__
             ));
