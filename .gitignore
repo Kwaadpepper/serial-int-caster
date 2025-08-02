@@ -10,3 +10,5 @@ coverage
 # ignore CSV test files
 serialTestFilePhp.csv
 serialTestFileKotlin.csv
+
+composer.lock
