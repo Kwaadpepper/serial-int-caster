@@ -8,8 +8,13 @@ This library is compatible with **BCMath** and **GMP** extensions to handle larg
 
 Unit tests are available:
 
-- \`composer install\`
-- \`composer run test\`
+```sh
+composer install
+```
+
+```sh
+composer test
+```
 
 ## Usage
 
@@ -19,7 +24,7 @@ composer require kwaadpepper/serial-int-caster
 
 ### For large numbers (BCMath or GMP)
 
-Use the \`BCMathBaseConverter\` or \`GmpBaseConverter\` to handle numbers that exceed PHP's integer capacity. One of these extensions must be installed.
+Use the `BCMathBaseConverter` or `GmpBaseConverter` to handle numbers that exceed PHP's integer capacity. One of these extensions must be installed.
 
 ```php
 use Kwaadpepper\\Serial\\SerialCaster;
@@ -66,7 +71,7 @@ print_r($int_to_encode === $caster_gmp->decode($encoded_number_gmp));
 
 ### For small numbers (without BCMath/GMP)
 
-If you are working with numbers that do not exceed PHP's maximum integer value (\`PHP_INT_MAX\`), you can use the \`NativeBaseConverter\`. This is a faster solution because it does not rely on external extensions, but it is limited to initial base conversions of 10 or less.
+If you are working with numbers that do not exceed PHP's maximum integer value (`PHP_INT_MAX`), you can use the `NativeBaseConverter`. This is a faster solution because it does not rely on external extensions, but it is limited to initial base conversions of 10 or less.
 
 ```php
 use Kwaadpepper\\Serial\\SerialCaster;
