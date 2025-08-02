@@ -8,8 +8,8 @@ This library is compatible with **BCMath** and **GMP** extensions to handle larg
 
 Unit tests are available:
 
-- `composer install`
-- `composer run test`
+- \`composer install\`
+- \`composer run test\`
 
 ## Usage
 
@@ -19,68 +19,75 @@ composer require kwaadpepper/serial-int-caster
 
 ### For large numbers (BCMath or GMP)
 
-Use the `BCMathBaseConverter` or `GmpBaseConverter` to handle numbers that exceed PHP's integer capacity. One of these extensions must be installed.
+Use the \`BCMathBaseConverter\` or \`GmpBaseConverter\` to handle numbers that exceed PHP's integer capacity. One of these extensions must be installed.
 
 ```php
-use Kwaadpepper\Serial\SerialCaster;
-use Kwaadpepper\Serial\Converters\BCMathBaseConverter;
-use Kwaadpepper\Serial\Converters\GmpBaseConverter;
+use Kwaadpepper\\Serial\\SerialCaster;
+use Kwaadpepper\\Serial\\SerialCasterBuilder;
+use Kwaadpepper\\Serial\\Converters\\BCMathBaseConverter;
+use Kwaadpepper\\Serial\\Converters\\GmpBaseConverter;
+use Kwaadpepper\\Serial\\Shufflers\\FisherYatesShuffler;
 
 // Using BCMathBaseConverter
 $int_to_encode = 9223372036854775807; // PHP_INT_MAX
-$seed = 1492;
-$encoded_number_bcmath = (new SerialCaster(new BCMathBaseConverter(), 'ABCDEFabcdef0123456789'))->encode(
-    $int_to_encode,
-    $seed,
-    12
-);
+$seed          = 1492;
+$length        = 12;
+$chars         = 'ABCDEFabcdef0123456789';
+
+$caster_bcmath = (new SerialCasterBuilder(new BCMathBaseConverter()))
+    ->withShuffler(new FisherYatesShuffler())
+    ->withChars($chars)
+    ->withLength($length)
+    ->withSeed($seed)
+    ->build();
+
+$encoded_number_bcmath = $caster_bcmath->encode($int_to_encode);
 
 // Prints TRUE
-print_r($int_to_encode === (new SerialCaster(new BCMathBaseConverter(), 'ABCDEFabcdef0123456789'))->decode(
-    $encoded_number_bcmath,
-    $seed
-));
+print_r($int_to_encode === $caster_bcmath->decode($encoded_number_bcmath));
 
 // Using GmpBaseConverter
-$caster_gmp = new SerialCaster(new GmpBaseConverter());
+$int_to_encode = 9223372036854775807; // PHP_INT_MAX
+$seed          = 1492;
+$length        = 12;
 
-$encoded_number_gmp = $caster_gmp->encode(
-    $int_to_encode,
-    $seed,
-    12
-);
+$caster_gmp = (new SerialCasterBuilder(new GmpBaseConverter()))
+    ->withShuffler(new FisherYatesShuffler())
+    ->withChars($chars)
+    ->withLength($length)
+    ->withSeed($seed)
+    ->build();
+
+$encoded_number_gmp = $caster_gmp->encode($int_to_encode);
 
 // Prints TRUE
-print_r($int_to_encode === $caster_gmp->decode(
-    $encoded_number_gmp,
-    $seed
-));
+print_r($int_to_encode === $caster_gmp->decode($encoded_number_gmp));
 ```
 
 ### For small numbers (without BCMath/GMP)
 
-If you are working with numbers that do not exceed PHP's maximum integer value (`PHP_INT_MAX`), you can use the `NativeBaseConverter`. This is a faster solution because it does not rely on external extensions, but it is limited to initial base conversions of 10 or less.
+If you are working with numbers that do not exceed PHP's maximum integer value (\`PHP_INT_MAX\`), you can use the \`NativeBaseConverter\`. This is a faster solution because it does not rely on external extensions, but it is limited to initial base conversions of 10 or less.
 
 ```php
-use Kwaadpepper\Serial\SerialCaster;
-use Kwaadpepper\Serial\Converters\NativeBaseConverter;
+use Kwaadpepper\\Serial\\SerialCaster;
+use Kwaadpepper\\Serial\\SerialCasterBuilder;
+use Kwaadpepper\\Serial\\Converters\\NativeBaseConverter;
+use Kwaadpepper\\Serial\\Shufflers\\FisherYatesShuffler;
 
-$caster_native = new SerialCaster(
-    new NativeBaseConverter(),
-    '01234ABCDE'
-);
+$int_to_encode_native = 15;
+$seed                 = 1492;
+$length               = 6;
+$chars                = '01234ABCDE';
 
-$int_to_encode_native  = 15;
-$seed                  = 1492;
-$encoded_number_native = $caster_native->encode(
-    $int_to_encode_native,
-    $seed,
-    6,
-);
+$caster_native = (new SerialCasterBuilder(new NativeBaseConverter()))
+    ->withShuffler(new FisherYatesShuffler())
+    ->withChars($chars)
+    ->withLength($length)
+    ->withSeed($seed)
+    ->build();
+
+$encoded_number_native = $caster_native->encode($int_to_encode_native);
 
 // Prints TRUE
-print_r($int_to_encode_native === $caster_native->decode(
-    $encoded_number_native,
-    $seed
-));
+print_r($int_to_encode_native === $caster_native->decode($encoded_number_native));
 ```
