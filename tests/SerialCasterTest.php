@@ -121,10 +121,13 @@ class SerialCasterTest extends TestCase
         // * GIVEN
         $number         = 14776335;
         $expectedSerial = '1bzzzO';
-        $customCaster   = $casterFactory();
+        $seed           = 0;
+        $length         = self::LENGTH;
+        $chars          = self::ALPHANUMERIC;
+        $caster         = $casterFactory($seed, $length, $chars);
 
         // * WHEN
-        $serial = $customCaster->encode($number);
+        $serial = $caster->encode($number);
 
         // * THEN
         $this->assertEquals(
@@ -175,7 +178,8 @@ class SerialCasterTest extends TestCase
         // * GIVEN
         $serial         = '000HLC';
         $expectedNumber = 666;
-        $defaultCaster  = $casterFactory();
+        $seed           = 0;
+        $defaultCaster  = $casterFactory($seed);
 
         // * WHEN
         $number = $defaultCaster->decode($serial);
@@ -220,7 +224,10 @@ class SerialCasterTest extends TestCase
     public function testBreakIfDecodedIsTooShort(\Closure $casterFactory)
     {
         // * GIVEN
-        $caster = $casterFactory();
+        $seed   = self::SEED;
+        $length = self::LENGTH;
+        $chars  = self::ALPHANUMERIC;
+        $caster = $casterFactory($seed, $length, $chars);
         $serial = 'A';
 
         // * THEN
@@ -315,7 +322,10 @@ class SerialCasterTest extends TestCase
     public function testEncodeAndDecodeWithRandomValues(\Closure $casterFactory)
     {
         // * GIVEN
-        $caster = $casterFactory();
+        $seed   = self::SEED;
+        $length = self::LENGTH;
+        $chars  = self::ALPHANUMERIC;
+        $caster = $casterFactory($seed, $length, $chars);
         srand();
         $loops = rand(50, 70);
 
@@ -345,7 +355,10 @@ class SerialCasterTest extends TestCase
     public function testSpeedTestOnCouponGeneration(\Closure $casterFactory)
     {
         // * GIVEN
-        $caster                  = $casterFactory();
+        $seed                    = self::SEED;
+        $length                  = self::LENGTH;
+        $chars                   = self::ALPHANUMERIC;
+        $caster                  = $casterFactory($seed, $length, $chars);
         $acceptableTimeInSeconds = 4;
         $numberOfCoupons         = 999;
         $coupons                 = [];
@@ -382,7 +395,10 @@ class SerialCasterTest extends TestCase
     public function testSpeedTestOnCouponDecode(\Closure $casterFactory)
     {
         // * GIVEN
-        $caster                  = $casterFactory();
+        $seed                    = self::SEED;
+        $length                  = self::LENGTH;
+        $chars                   = self::ALPHANUMERIC;
+        $caster                  = $casterFactory($seed, $length, $chars);
         $acceptableTimeInSeconds = 4;
         $numberOfCoupons         = 999;
         $coupons                 = [];
