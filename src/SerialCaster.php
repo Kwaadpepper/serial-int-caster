@@ -58,6 +58,7 @@ final class SerialCaster
     public function encode(int $number, int $seed = 0, int $length = 6): string
     {
         $this->validateEncodingParameters($number, $length);
+        // Add 2 chars to the length for the chars count.
         $charsCount = str_pad((string)count($this->chars), 2, '0', \STR_PAD_LEFT);
         $outString  = (string)$number . $charsCount;
         $outString  = str_pad(
