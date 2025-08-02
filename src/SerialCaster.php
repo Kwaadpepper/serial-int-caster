@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Kwaadpepper\Serial;
 
 use Kwaadpepper\Serial\Converters\BCMathBaseConverter;
@@ -46,7 +48,7 @@ final class SerialCaster
     public static function encode(int $number, int $seed = 0, int $length = 6, string $chars = ''): string
     {
         self::init($number, $length, $chars);
-        $charsCount = str_pad(strlen(self::$chars), 2, '0', \STR_PAD_LEFT);
+        $charsCount = str_pad((string)strlen(self::$chars), 2, '0', \STR_PAD_LEFT);
         $outString  = (string)$number . $charsCount;
         $outString  = str_pad(
             self::convBase($outString, self::BASE10, self::$chars),
