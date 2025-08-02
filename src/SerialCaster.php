@@ -227,38 +227,41 @@ final class SerialCaster
      */
     private static function convBase(string $numberInput, string $fromBaseInput, string $toBaseInput): string
     {
-        if ($fromBaseInput == $toBaseInput) {
+        if ($fromBaseInput === $toBaseInput) {
             return $numberInput;
         }
-        $fromBase  = str_split($fromBaseInput, 1);
-        $toBase    = str_split($toBaseInput, 1);
-        $number    = str_split($numberInput, 1);
+
+        $fromBase  = str_split($fromBaseInput);
+        $toBase    = str_split($toBaseInput);
+        $number    = str_split($numberInput);
         $fromLen   = strlen($fromBaseInput);
         $toLen     = strlen($toBaseInput);
         $numberLen = strlen($numberInput);
-        $retval    = '';
-        if ($toBaseInput == self::BASE10) {
-            $retval = 0;
+
+        if ($fromBaseInput !== self::BASE10) {
+            $base10 = '0';
             for ($i = 1; $i <= $numberLen; $i++) {
-                $retval = bcadd($retval, bcmul(
-                    array_search($number[$i - 1], $fromBase),
-                    bcpow($fromLen, $numberLen - $i)
-                ));
+                $pos    = array_search($number[$i - 1], $fromBase);
+                $base10 = bcadd($base10, bcmul($pos, bcpow($fromLen, $numberLen - $i)));
             }
-            return $retval;
-        }
-        if ($fromBaseInput != self::BASE10) {
-            $base10 = self::convBase($numberInput, $fromBaseInput, self::BASE10);
         } else {
             $base10 = $numberInput;
         }
-        if ($base10 < strlen($toBaseInput)) {
+
+        if ($toBaseInput === self::BASE10) {
+            return $base10;
+        }
+
+        if (bccomp($base10, $toLen) == -1) {
             return $toBase[$base10];
         }
-        while ($base10 != '0') {
+
+        $retval = '';
+        while (bccomp($base10, '0') > 0) {
             $retval = $toBase[bcmod($base10, $toLen)] . $retval;
             $base10 = bcdiv($base10, $toLen, 0);
         }
+
         return $retval;
     }
 
