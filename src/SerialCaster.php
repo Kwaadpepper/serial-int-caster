@@ -18,7 +18,7 @@ final class SerialCaster
     /**
      * Base 10 bytes
      */
-    private const BASE10 = '0123456789';
+    private const BASE10 = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
     /** @var \Kwaadpepper\Serial\FisherYatesShuffler */
     private $shuffler;
@@ -61,7 +61,7 @@ final class SerialCaster
         $charsCount = str_pad((string)count($this->chars), 2, '0', \STR_PAD_LEFT);
         $outString  = (string)$number . $charsCount;
         $outString  = str_pad(
-            $this->convBase($outString, self::BASE10, implode('', $this->chars)),
+            $this->convBase($outString, self::BASE10, $this->chars),
             $length,
             $this->chars[0],
             \STR_PAD_LEFT
@@ -93,7 +93,7 @@ final class SerialCaster
             }
         }
 
-        $outNumber = $this->convBase($serial, implode('', $this->chars), self::BASE10);
+        $outNumber = $this->convBase($serial, $this->chars, self::BASE10);
 
         if (strlen($outNumber) < 3) {
             throw new SerialCasterException(sprintf('%s::decode un code série invalide à été donné', __CLASS__));
@@ -225,17 +225,17 @@ final class SerialCaster
      * Converts any number from a base to another using chars
      *
      * @param string $numberInput
-     * @param string $fromBaseInput
-     * @param string $toBaseInput
+     * @param array  $fromBase
+     * @param array  $toBase
      * @return string
      * @url https://www.php.net/manual/fr/function.base-convert.php#106546
      */
-    private function convBase(string $numberInput, string $fromBaseInput, string $toBaseInput): string
+    private function convBase(string $numberInput, array $fromBase, array $toBase): string
     {
         return $this->converter->convert(
             $numberInput,
-            $fromBaseInput,
-            $toBaseInput
+            $fromBase,
+            $toBase
         );
     }
 
