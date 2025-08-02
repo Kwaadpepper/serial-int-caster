@@ -29,9 +29,9 @@ final class SerialCaster
     /**
      * Available chars for Serial generation
      *
-     * @var string
+     * @var array<int, string>
      */
-    private $chars = '';
+    private $chars = [];
 
     /**
      * SerialCaster constructor.
@@ -58,10 +58,10 @@ final class SerialCaster
     public function encode(int $number, int $seed = 0, int $length = 6): string
     {
         $this->init($number, $length);
-        $charsCount = str_pad((string)strlen($this->chars), 2, '0', \STR_PAD_LEFT);
+        $charsCount = str_pad((string)count($this->chars), 2, '0', \STR_PAD_LEFT);
         $outString  = (string)$number . $charsCount;
         $outString  = str_pad(
-            $this->convBase($outString, self::BASE10, $this->chars),
+            $this->convBase($outString, self::BASE10, implode('', $this->chars)),
             $length,
             $this->chars[0],
             \STR_PAD_LEFT
@@ -83,9 +83,8 @@ final class SerialCaster
         $this->unshuffle($seed, $serial);
         $serialLength = strlen($serial);
 
-        $charsMap = array_flip(str_split($this->chars));
         for ($i = 0; $i < $serialLength; $i++) {
-            if (!isset($charsMap[$serial[$i]])) {
+            if (!in_array($serial[$i], $this->chars, true)) {
                 throw new SerialCasterException(sprintf(
                     '%s::decode un caractère non valide `%s` est présent',
                     __CLASS__,
@@ -94,7 +93,7 @@ final class SerialCaster
             }
         }
 
-        $outNumber = $this->convBase($serial, $this->chars, self::BASE10);
+        $outNumber = $this->convBase($serial, implode('', $this->chars), self::BASE10);
 
         if (strlen($outNumber) < 3) {
             throw new SerialCasterException(sprintf('%s::decode un code série invalide à été donné', __CLASS__));
@@ -103,7 +102,7 @@ final class SerialCaster
         $charsCount = (int)substr($outNumber, -2);
         $outNumber  = (int)substr($outNumber, 0, strlen($outNumber) - 2);
 
-        if ($charsCount !== strlen($this->chars)) {
+        if ($charsCount !== count($this->chars)) {
             throw new SerialCasterException(sprintf(
                 '%s::decode la liste de caractère pour décoder ne semble
                 pas correspondre à celui utilisé pour l\'encodage',
@@ -126,13 +125,13 @@ final class SerialCaster
         if ($length <= 0) {
             throw new SerialCasterException(sprintf('%s need a length of minimum 1', __CLASS__));
         }
-        if (strlen($this->chars) < 2) {
+        if (count($this->chars) < 2) {
             throw new SerialCasterException(sprintf('%s need a minimum length of 2 unique chars', __CLASS__));
         }
-        if (strlen($this->chars) > 99) {
+        if (count($this->chars) > 99) {
             throw new SerialCasterException(sprintf('%s can have a minimum length of 99 unique chars', __CLASS__));
         }
-        $minimumLength = $this->calculateNewBaseLengthFromBase10($number, strlen($this->chars)) + 2;
+        $minimumLength = $this->calculateNewBaseLengthFromBase10($number, count($this->chars)) + 2;
         if ($length < $minimumLength) {
             throw new SerialCasterException(sprintf(
                 '%s need a minimum length of %d',
@@ -198,7 +197,8 @@ final class SerialCaster
     private function setChars(?string $chars = null): void
     {
         if ($chars) {
-            $this->chars = count_chars($chars, 3);
+            $uniqueChars = count_chars($chars, 3);
+            $this->chars = str_split($uniqueChars);
             return;
         }
 
@@ -212,11 +212,13 @@ final class SerialCaster
      */
     private function setupDefaultChars(): void
     {
-        $defaultChars = implode(range('a', 'z')) .
-            implode(range('A', 'Z')) .
-            implode(range('0', '9'));
+        $defaultChars = array_merge(
+            range('a', 'z'),
+            range('A', 'Z'),
+            range('0', '9')
+        );
 
-        $this->chars = count_chars($defaultChars, 3);
+        $this->chars = str_split(count_chars(implode($defaultChars), 3));
     }
 
     /**
