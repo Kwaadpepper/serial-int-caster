@@ -12,6 +12,21 @@ class SerialCasterTest extends TestCase
     private const LENGTH       = 6;
     private const SEED         = 1492;
 
+        /**
+         * Test integer encodes to string
+         *
+         * @return void
+         */
+    public function testSerialEncodeZero()
+    {
+        $this->assertEquals(
+            SerialCaster::encode(0, 0, self::LENGTH, self::ALPHANUMERIC),
+            '000010',
+            //  phpcs:ignore Generic.Files.LineLength.TooLong
+            'Encoding 0(10) on base with ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 should give 000010'
+        );
+    }
+
     /**
      * Test integer encodes to string
      *
