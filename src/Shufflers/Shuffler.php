@@ -7,25 +7,20 @@ namespace Kwaadpepper\Serial\Shufflers;
 interface Shuffler
 {
     /**
-     * Shuffle a string
+     * Shuffle a string with a given seed.
      *
-     * @param string $string
+     * @param string  $string The string to shuffle.
+     * @param integer $seed   The seed for the shuffle algorithm.
      * @return void
      */
-    public function shuffle(string &$string): void;
+    public function shuffle(string &$string, int $seed): void;
 
     /**
-     * Unshuffle a string
+     * Unshuffle a string with a given seed.
      *
-     * @param string $string
+     * @param string  $string The string to unshuffle.
+     * @param integer $seed   The seed for the unshuffle algorithm.
      * @return void
      */
-    public function unshuffle(string &$string): void;
-
-    /**
-     * Get the actual seed.
-     *
-     * @return integer
-     */
-    public function seed(): int;
+    public function unshuffle(string &$string, int $seed): void;
 }

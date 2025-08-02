@@ -7,7 +7,7 @@ namespace Kwaadpepper\Serial;
 use Kwaadpepper\Serial\Converters\BaseConverter;
 use Kwaadpepper\Serial\Exceptions\ConfigurationException;
 use Kwaadpepper\Serial\Exceptions\InvalidSerialException;
-use Kwaadpepper\Serial\Shufflers\FisherYatesShuffler;
+use Kwaadpepper\Serial\Shufflers\Shuffler;
 
 /**
  * Encode Integers to a Serial String and decode them
@@ -22,11 +22,11 @@ final class SerialCaster
      */
     private const BASE10 = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
-    /** @var \Kwaadpepper\Serial\Shufflers\Shuffler */
-    private $shuffler;
-
     /** @var \Kwaadpepper\Serial\Converters\BaseConverter Le moteur de conversion de base. */
     private $converter;
+
+    /** @var \Kwaadpepper\Serial\Shufflers\Shuffler|null */
+    private $shuffler;
 
     /**
      * Available chars for Serial generation
@@ -39,12 +39,14 @@ final class SerialCaster
      * SerialCaster constructor.
      *
      * @param \Kwaadpepper\Serial\Converters\BaseConverter $converter
+     * @param \Kwaadpepper\Serial\Shufflers\Shuffler|null  $shuffler
      * @param string|null                                  $chars
      * @throws \Kwaadpepper\Serial\Exceptions\SerialCasterException If the chars are not valid.
      */
-    public function __construct(BaseConverter $converter, ?string $chars = null)
+    public function __construct(BaseConverter $converter, ?Shuffler $shuffler = null, ?string $chars = null)
     {
         $this->converter = $converter;
+        $this->shuffler  = $shuffler;
         $this->setChars($chars);
     }
 
@@ -195,12 +197,12 @@ final class SerialCaster
      */
     private function shuffle(int $seed, string &$serial): void
     {
-        if ($seed) {
-            $this->setupShuffle($seed);
-            $this->shuffler->shuffle($serial);
+        if ($seed && $this->shuffler !== null) {
+            $this->shuffler->shuffle($serial, $seed);
             $this->rotateLeft($serial, $this->sumString($serial) % strlen($serial));
         }
     }
+
 
     /**
      * If seed is different than 0, then unshuffles the serial bytes
@@ -212,23 +214,9 @@ final class SerialCaster
      */
     private function unshuffle(int $seed, string &$serial): void
     {
-        if ($seed) {
-            $this->setupShuffle($seed);
+        if ($seed && $this->shuffler !== null) {
             $this->rotateRight($serial, $this->sumString($serial) % strlen($serial));
-            $this->shuffler->unshuffle($serial);
-        }
-    }
-
-    /**
-     * Setup shuffle
-     *
-     * @param integer $seed
-     * @return void
-     */
-    private function setupShuffle(int $seed): void
-    {
-        if (!$this->shuffler || $this->shuffler->seed() !== $seed) {
-            $this->shuffler = new FisherYatesShuffler($seed);
+            $this->shuffler->unshuffle($serial, $seed);
         }
     }
 
