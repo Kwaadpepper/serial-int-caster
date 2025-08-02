@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use Kwaadpepper\Serial\Converters\BCMathBaseConverter;
 use Kwaadpepper\Serial\SerialCaster;
 use PHPUnit\Framework\TestCase;
 
@@ -10,6 +11,22 @@ class KotlinComparisonTest extends TestCase
     private const ALPHANUMERIC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     private const LENGTH       = 10;
     private const MAX_INTEGER  = 99999999999;
+
+    /** @var \Kwaadpepper\Serial\SerialCaster */
+    private $caster;
+
+    /**
+     * Set up the test environment.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->caster = new SerialCaster(
+            new BCMathBaseConverter(),
+            self::ALPHANUMERIC
+        );
+    }
 
     /**
      * Test kotlin generated serials
@@ -45,10 +62,10 @@ class KotlinComparisonTest extends TestCase
 
         // * Check Header values
         $this->assertTrue(
-            \is_array($cvsContent[1]) and
-                \count($cvsContent[1]) === 3 and
-                \is_numeric($cvsContent[1][0]) and
-                \intval($cvsContent[1][1]) === self::LENGTH and
+            \is_array($cvsContent[1]) &&
+                \count($cvsContent[1]) === 3 &&
+                \is_numeric($cvsContent[1][0]) &&
+                \intval($cvsContent[1][1]) === self::LENGTH &&
                 $cvsContent[1][2] === self::ALPHANUMERIC,
             'Array Header values should be like ' . \json_encode([
                 'integer value', self::LENGTH, self::ALPHANUMERIC
@@ -78,16 +95,14 @@ class KotlinComparisonTest extends TestCase
             $integer = \intval($cvsContent[$i][0]);
             $serial  = \strval($cvsContent[$i][1]);
 
-            $this->assertEquals($serial, $testEncode = SerialCaster::encode(
+            $this->assertEquals($serial, $testEncode = $this->caster->encode(
                 $integer,
                 $seed,
                 self::LENGTH,
-                self::ALPHANUMERIC
             ), "Encode `{$integer}` should give `{$serial}`, got `{$testEncode}`");
-            $this->assertEquals("$integer", $testDecode = SerialCaster::decode(
+            $this->assertEquals("$integer", $testDecode = $this->caster->decode(
                 $serial,
                 $seed,
-                self::ALPHANUMERIC
             ), "Decode `{$serial}` should give `{$integer}`, got `{$testDecode}`");
         }
         \fclose($file);
@@ -112,6 +127,11 @@ class KotlinComparisonTest extends TestCase
             ));
         }
 
+        $caster = new SerialCaster(
+            new BCMathBaseConverter(),
+            self::ALPHANUMERIC
+        );
+
         $seed          = \intval(microtime(true) * 1000000);
         $csv_rows      = [
             ['seed', 'length', 'dict'],
@@ -134,7 +154,7 @@ class KotlinComparisonTest extends TestCase
         while ($i < ($lines_to_genenerate + $header_offset)) {
             /** @var integer $seed Our previous seed integer. */
             $integer          = $csv_rows[$i][0];
-            $csv_rows[$i++][] = SerialCaster::encode($integer, $seed, self::LENGTH, self::ALPHANUMERIC);
+            $csv_rows[$i++][] = $caster->encode($integer, $seed, self::LENGTH);
         }
 
         // * Print into file.
