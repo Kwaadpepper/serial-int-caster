@@ -187,10 +187,21 @@ final class SerialCaster
     private static function setChars(string $chars): void
     {
         if (strlen($chars)) {
-            // Keep a string of unique chars.
             self::$chars = count_chars($chars, 3);
             return;
         }
+
+        self::setupDefaultChars();
+    }
+
+    /**
+     * Setup default chars
+     *
+     * @return void
+     */
+    private static function setupDefaultChars(): void
+    {
+        // Default chars
         $inits = [
             [ord('a'), ord('z')],
             [ord('A'), ord('Z')],
