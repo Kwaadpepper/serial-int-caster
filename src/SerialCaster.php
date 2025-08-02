@@ -8,6 +8,7 @@ use Kwaadpepper\Serial\Converters\BaseConverter;
 use Kwaadpepper\Serial\Exceptions\ConfigurationException;
 use Kwaadpepper\Serial\Exceptions\InvalidNumberException;
 use Kwaadpepper\Serial\Exceptions\InvalidSerialException;
+use Kwaadpepper\Serial\Shufflers\FisherYatesShuffler;
 
 /**
  * Encode Integers to a Serial String and decode them
@@ -22,7 +23,7 @@ final class SerialCaster
      */
     private const BASE10 = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
-    /** @var \Kwaadpepper\Serial\FisherYatesShuffler */
+    /** @var \Kwaadpepper\Serial\Shufflers\Shuffler */
     private $shuffler;
 
     /** @var \Kwaadpepper\Serial\Converters\BaseConverter Le moteur de conversion de base. */

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kwaadpepper\Serial;
+namespace Kwaadpepper\Serial\Shufflers;
 
 use mersenne_twister\twister;
 
@@ -14,7 +14,7 @@ use mersenne_twister\twister;
  * @url https://stackoverflow.com/questions/24262147/can-a-seeded-shuffle-be-reversed
  * @url https://fr.wikipedia.org/wiki/M%C3%A9lange_de_Fisher-Yates
  */
-class FisherYatesShuffler
+class FisherYatesShuffler implements Shuffler
 {
     /** @var \mersenne_twister\twister $twister */
     private $twister;
@@ -49,7 +49,7 @@ class FisherYatesShuffler
      * @param string $string
      * @return void
      */
-    public function shuffle(string &$string)
+    public function shuffle(string &$string): void
     {
         $this->twister->init_with_integer($this->seed);
         $length = strlen($string);
@@ -67,7 +67,7 @@ class FisherYatesShuffler
      * @param string $string
      * @return void
      */
-    public function unshuffle(string &$string)
+    public function unshuffle(string &$string): void
     {
         $this->twister->init_with_integer($this->seed);
         $length  = strlen($string);

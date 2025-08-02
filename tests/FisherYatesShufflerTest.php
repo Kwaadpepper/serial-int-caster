@@ -2,7 +2,7 @@
 
 namespace Tests;
 
-use Kwaadpepper\Serial\FisherYatesShuffler;
+use Kwaadpepper\Serial\Shufflers\FisherYatesShuffler;
 use PHPUnit\Framework\TestCase;
 
 class FisherYatesShufflerTest extends TestCase
