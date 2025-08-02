@@ -1,4 +1,4 @@
-# Serial Int Caster
+# Serial Int Caster PHP
 
 This Library allows encoding an integer to a serial number and the other way around decode it to retrieve the integer.
 
