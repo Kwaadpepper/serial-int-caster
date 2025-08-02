@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Kwaadpepper\Serial;
 
 use Kwaadpepper\Serial\Converters\BaseConverter;
-use Kwaadpepper\Serial\Exceptions\SerialCasterException;
+use Kwaadpepper\Serial\Exceptions\ConfigurationException;
+use Kwaadpepper\Serial\Exceptions\InvalidNumberException;
+use Kwaadpepper\Serial\Exceptions\InvalidSerialException;
 
 /**
  * Encode Integers to a Serial String and decode them
@@ -53,7 +55,7 @@ final class SerialCaster
      * @param integer $seed   The seed used to suffle the serial bytes order.
      * @param integer $length The serial desired length.
      * @return string The serial
-     * @throws \Kwaadpepper\Serial\Exceptions\SerialCasterException If a config error happens.
+     * @throws \Kwaadpepper\Serial\Exceptions\ConfigurationException If a config error happens.
      */
     public function encode(int $number, int $seed = 0, int $length = 6): string
     {
@@ -77,7 +79,10 @@ final class SerialCaster
      * @param string  $serial The serial ton decode.
      * @param integer $seed   The seed used to randomize the serial.
      * @return integer The number encoded in the serial
-     * @throws SerialCasterException If a wrong serial or charlist is given.
+     * @throws \Kwaadpepper\Serial\Exceptions\ConfigurationException If a wrong serial or charlist is given.
+     * @throws \Kwaadpepper\Serial\Exceptions\InvalidSerialException If the serial is invalid.
+     * @throws \Kwaadpepper\Serial\Exceptions\InvalidNumberException If the number of chars does not match the
+     *  expected count.
      */
     public function decode(string $serial, int $seed = 0): int
     {
@@ -86,7 +91,7 @@ final class SerialCaster
 
         for ($i = 0; $i < $serialLength; $i++) {
             if (!in_array($serial[$i], $this->chars, true)) {
-                throw new SerialCasterException(sprintf(
+                throw new ConfigurationException(sprintf(
                     '%s::decode un caractère non valide `%s` est présent',
                     __CLASS__,
                     $serial[$i]
@@ -97,14 +102,14 @@ final class SerialCaster
         $outNumber = $this->convBase($serial, $this->chars, self::BASE10);
 
         if (strlen($outNumber) < 3) {
-            throw new SerialCasterException(sprintf('%s::decode un code série invalide à été donné', __CLASS__));
+            throw new InvalidSerialException(sprintf('%s::decode un code série invalide à été donné', __CLASS__));
         }
 
         $charsCount = (int)substr($outNumber, -2);
         $outNumber  = (int)substr($outNumber, 0, strlen($outNumber) - 2);
 
         if ($charsCount !== count($this->chars)) {
-            throw new SerialCasterException(sprintf(
+            throw new InvalidNumberException(sprintf(
                 '%s::decode la liste de caractère pour décoder ne semble
                 pas correspondre à celui utilisé pour l\'encodage',
                 __CLASS__
@@ -119,22 +124,22 @@ final class SerialCaster
      * @param integer $number
      * @param integer $length
      * @return void
-     * @throws \Kwaadpepper\Serial\Exceptions\SerialCasterException If parameters are wrong.
+     * @throws \Kwaadpepper\Serial\Exceptions\ConfigurationException If parameters are wrong.
      */
     private function validateEncodingParameters(int $number, int $length): void
     {
         if ($length <= 0) {
-            throw new SerialCasterException(sprintf('%s need a length of minimum 1', __CLASS__));
+            throw new ConfigurationException(sprintf('%s need a length of minimum 1', __CLASS__));
         }
         if (count($this->chars) < 2) {
-            throw new SerialCasterException(sprintf('%s need a minimum length of 2 unique chars', __CLASS__));
+            throw new ConfigurationException(sprintf('%s need a minimum length of 2 unique chars', __CLASS__));
         }
         if (count($this->chars) > 99) {
-            throw new SerialCasterException(sprintf('%s can have a minimum length of 99 unique chars', __CLASS__));
+            throw new ConfigurationException(sprintf('%s can have a minimum length of 99 unique chars', __CLASS__));
         }
         $minimumLength = $this->calculateNewBaseLengthFromBase10($number, count($this->chars)) + 2;
         if ($length < $minimumLength) {
-            throw new SerialCasterException(sprintf(
+            throw new ConfigurationException(sprintf(
                 '%s need a minimum length of %d',
                 __CLASS__,
                 $minimumLength
