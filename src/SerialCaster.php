@@ -35,10 +35,10 @@ final class SerialCaster
      */
     private $chars = [];
 
-    /** @var integer La graine de mélange utilisée. */
+    /** @var integer The seed used for shuffling. */
     private $seed;
 
-    /** @var integer La longueur minimale des numéros de série. */
+    /** @var integer The minimum length of serial numbers. */
     private $length;
 
     /**
@@ -53,10 +53,10 @@ final class SerialCaster
      */
     public function __construct(
         BaseConverter $converter,
-        ?Shuffler $shuffler = null,
-        ?string $chars = null,
-        int $seed = 0,
-        int $length = 6
+        ?Shuffler $shuffler,
+        ?string $chars,
+        int $seed,
+        int $length
     ) {
         $this->converter = $converter;
         $this->shuffler  = $shuffler;

@@ -2,12 +2,15 @@
 
 namespace Tests;
 
+use Kwaadpepper\Serial\Converters\BaseConverter;
 use Kwaadpepper\Serial\Converters\BCMathBaseConverter;
 use Kwaadpepper\Serial\Converters\GmpBaseConverter;
 use Kwaadpepper\Serial\Exceptions\ConfigurationException;
 use Kwaadpepper\Serial\Exceptions\InvalidSerialException;
 use Kwaadpepper\Serial\SerialCaster;
+use Kwaadpepper\Serial\SerialCasterBuilder;
 use Kwaadpepper\Serial\Shufflers\FisherYatesShuffler;
+use Kwaadpepper\Serial\Shufflers\Shuffler;
 use PHPUnit\Framework\TestCase;
 
 class SerialCasterTest extends TestCase
@@ -25,12 +28,26 @@ class SerialCasterTest extends TestCase
     {
         return [
             'BCMathBaseConverter' => [
-                new SerialCaster(new BCMathBaseConverter(), new FisherYatesShuffler(), self::ALPHANUMERIC),
-                BCMathBaseConverter::class
+                function (?int $seed = null, ?int $length = null, ?string $chars = null): SerialCaster {
+                    return $this->buildSerialCaster(
+                        new BCMathBaseConverter(),
+                        new FisherYatesShuffler(),
+                        $seed,
+                        $length,
+                        $chars
+                    );
+                },
             ],
             'GmpBaseConverter' => [
-                new SerialCaster(new GmpBaseConverter(), new FisherYatesShuffler(), self::ALPHANUMERIC),
-                GmpBaseConverter::class
+                function (?int $seed = null, ?int $length = null, ?string $chars = null): SerialCaster {
+                    return $this->buildSerialCaster(
+                        new GmpBaseConverter(),
+                        new FisherYatesShuffler(),
+                        $seed,
+                        $length,
+                        $chars
+                    );
+                },
             ]
         ];
     }
@@ -39,25 +56,26 @@ class SerialCasterTest extends TestCase
      * Test integer encodes to string
      *
      * @dataProvider casterProvider
-     * @param \Kwaadpepper\Serial\SerialCaster $caster
+     * @param \Closure $casterFactory
      * @return void
      */
-    public function testSerialEncodeZero(SerialCaster $caster)
+    public function testSerialEncodeZero(\Closure $casterFactory)
     {
         // * GIVEN
-        $number         = 0;
         $seed           = 0;
         $length         = self::LENGTH;
+        $chars          = self::ALPHANUMERIC;
+        $caster         = $casterFactory($seed, $length, $chars);
+        $number         = 0;
         $expectedSerial = '000010';
 
         // * WHEN
-        $serial = $caster->encode($number, $seed, $length);
+        $serial = $caster->encode($number);
 
         // * THEN
         $this->assertEquals(
             $expectedSerial,
             $serial,
-            //  phpcs:ignore Generic.Files.LineLength.TooLong
             'Encoding 0(10) on base with ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 should give 000010'
         );
     }
@@ -66,19 +84,21 @@ class SerialCasterTest extends TestCase
      * Test integer encodes to string
      *
      * @dataProvider casterProvider
-     * @param \Kwaadpepper\Serial\SerialCaster $caster
+     * @param \Closure $casterFactory
      * @return void
      */
-    public function testSerialEncode(SerialCaster $caster)
+    public function testSerialEncode(\Closure $casterFactory)
     {
         // * GIVEN
-        $number         = 14776335;
         $seed           = 0;
         $length         = self::LENGTH;
+        $chars          = self::ALPHANUMERIC;
+        $caster         = $casterFactory($seed, $length, $chars);
+        $number         = 14776335;
         $expectedSerial = '1bzzzO';
 
         // * WHEN
-        $serial = $caster->encode($number, $seed, $length);
+        $serial = $caster->encode($number);
 
         // * THEN
         $this->assertEquals(
@@ -93,24 +113,18 @@ class SerialCasterTest extends TestCase
      * Test integer encodes to string with default dict
      *
      * @dataProvider casterProvider
-     * @param \Kwaadpepper\Serial\SerialCaster $caster
-     * @param string                           $converterClass
+     * @param \Closure $casterFactory
      * @return void
-     *
-     * @phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter.FoundInExtendedClassBeforeLastUsed
      */
-    public function testSerialEncodeWithDefaultDict(SerialCaster $caster, string $converterClass)
+    public function testSerialEncodeWithDefaultDict(\Closure $casterFactory)
     {
-        // phpcs:enable
         // * GIVEN
         $number         = 14776335;
-        $seed           = 0;
-        $length         = self::LENGTH;
         $expectedSerial = '1bzzzO';
-        $customCaster   = new SerialCaster(new $converterClass(), new FisherYatesShuffler());
+        $customCaster   = $casterFactory();
 
         // * WHEN
-        $serial = $customCaster->encode($number, $seed, $length);
+        $serial = $customCaster->encode($number);
 
         // * THEN
         $this->assertEquals(
@@ -125,23 +139,27 @@ class SerialCasterTest extends TestCase
      * Tests String decode to integer
      *
      * @dataProvider casterProvider
-     * @param \Kwaadpepper\Serial\SerialCaster $caster
+     * @param \Closure $casterFactory
      * @return void
      */
-    public function testSerialDecode(SerialCaster $caster)
+    public function testSerialDecode(\Closure $casterFactory)
     {
         // * GIVEN
-        $serial         = '000HLC';
         $seed           = 0;
+        $chars          = self::ALPHANUMERIC;
+        $caster         = $casterFactory($seed, null, $chars);
+        $serial         = '000HLC';
         $expectedNumber = 666;
 
         // * WHEN
-        $number = $caster->decode($serial, $seed);
+        $number = $caster->decode($serial);
 
         // * THEN
         $this->assertEquals(
             $expectedNumber,
             $number,
+            //  phpcs:ignore Generic.Files.LineLength.TooLong
+            'Decoding 000HLC(36) on base with ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 should give 666'
         );
     }
 
@@ -149,28 +167,25 @@ class SerialCasterTest extends TestCase
      * Tests String decode to integer wth default dict
      *
      * @dataProvider casterProvider
-     * @param \Kwaadpepper\Serial\SerialCaster $caster
-     * @param string                           $converterClass
+     * @param \Closure $casterFactory
      * @return void
-     *
-     * @phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter.FoundInExtendedClassBeforeLastUsed
      */
-    public function testSerialDecodeWithDefaultDict(SerialCaster $caster, string $converterClass)
+    public function testSerialDecodeWithDefaultDict(\Closure $casterFactory)
     {
-        // phpcs:enable
         // * GIVEN
         $serial         = '000HLC';
-        $seed           = 0;
         $expectedNumber = 666;
-        $defaultCaster  = new SerialCaster(new $converterClass(), new FisherYatesShuffler());
+        $defaultCaster  = $casterFactory();
 
         // * WHEN
-        $number = $defaultCaster->decode($serial, $seed);
+        $number = $defaultCaster->decode($serial);
 
         // * THEN
         $this->assertEquals(
             $expectedNumber,
-            $number
+            $number,
+            //  phpcs:ignore Generic.Files.LineLength.TooLong
+            'Decoding 000HLC(36) on base with ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 should give 666'
         );
     }
 
@@ -178,146 +193,139 @@ class SerialCasterTest extends TestCase
      * Tests if a serial has a char not in dictm it throws an error
      *
      * @dataProvider casterProvider
-     * @param \Kwaadpepper\Serial\SerialCaster $caster
+     * @param \Closure $casterFactory
      * @return void
      */
-    public function testBreakIfSerialHasInvalidChar(SerialCaster $caster)
+    public function testBreakIfSerialHasInvalidChar(\Closure $casterFactory)
     {
         // * GIVEN
+        $caster = $casterFactory();
         $serial = '*';
-        $seed   = self::SEED;
 
         // * THEN
         $this->expectException(InvalidSerialException::class);
         $this->expectExceptionMessageMatches('/Un caractère non valide `\*` est présent/');
 
         // * WHEN
-        $caster->decode($serial, $seed);
+        $caster->decode($serial);
     }
 
     /**
      * Tests if a serial is too shortm it throws and error
      *
      * @dataProvider casterProvider
-     * @param \Kwaadpepper\Serial\SerialCaster $caster
+     * @param \Closure $casterFactory
      * @return void
      */
-    public function testBreakIfDecodedIsTooShort(SerialCaster $caster)
+    public function testBreakIfDecodedIsTooShort(\Closure $casterFactory)
     {
         // * GIVEN
+        $caster = $casterFactory();
         $serial = 'A';
-        $seed   = self::SEED;
 
         // * THEN
         $this->expectException(InvalidSerialException::class);
         $this->expectExceptionMessageMatches('/Le code série est invalide/');
 
         // * WHEN
-        $caster->decode($serial, $seed);
+        $caster->decode($serial);
     }
 
     /**
      * Tests throws and error if using different dicts between encode and decode
      *
      * @dataProvider casterProvider
-     * @param \Kwaadpepper\Serial\SerialCaster $ignored
-     * @param string                           $converterClass
+     * @param \Closure $casterFactory
      * @return void
-     *
-     * @phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter.FoundInExtendedClassBeforeLastUsed
      */
-    public function testBreakIfDecodedCharListIsDifferentThanTheOneUsedForEncoding(
-        SerialCaster $ignored,
-        string $converterClass
-    ) {
-        // phpcs:enable
+    public function testBreakIfDecodedCharListIsDifferentThanTheOneUsedForEncoding(\Closure $casterFactory)
+    {
         // * GIVEN
         $seed          = self::SEED;
-        $shuffler      = new FisherYatesShuffler();
-        $encoderCaster = new SerialCaster(new $converterClass(), $shuffler, '01');
-        $decoderCaster = new SerialCaster(new $converterClass(), $shuffler, self::ALPHANUMERIC);
-        $serial        = $encoderCaster->encode(14776335, $seed, 26);
+        $length        = 26;
+        $encoderChars  = '01';
+        $decoderChars  = self::ALPHANUMERIC;
+        $encoderCaster = $casterFactory($seed, $length, $encoderChars);
+        $decoderCaster = $casterFactory($seed, $length, $decoderChars);
+        $number        = 14776335;
+
+        $serial = $encoderCaster->encode($number);
 
         // * THEN
         $this->expectException(InvalidSerialException::class);
         $this->expectExceptionMessageMatches('/La liste de caractères pour décoder ne semble/');
 
         // * WHEN
-        $decoderCaster->decode($serial, $seed);
+        $decoderCaster->decode($serial);
     }
 
     /**
      * Tests if encode would throw an error if serial length is not high enough.
      *
      * @dataProvider casterProvider
-     * @param \Kwaadpepper\Serial\SerialCaster $caster
+     * @param \Closure $casterFactory
      * @return void
      */
-    public function testBreakIfLengthIsNotHighEnough(SerialCaster $caster)
+    public function testBreakIfLengthIsNotHighEnough(\Closure $casterFactory)
     {
         // * GIVEN
-        $number = 14776336;
         $seed   = self::SEED;
-        $length = self::LENGTH;
+        $length = 5;
+        $chars  = self::ALPHANUMERIC;
+        $number = 14776336;
+        $caster = $casterFactory($seed, $length, $chars);
 
         // * THEN
         $this->expectException(ConfigurationException::class);
 
         // * WHEN
-        $caster->encode($number, $seed, $length);
+        $caster->encode($number);
     }
 
     /**
      * Tests if encode would throw an error if dict is not long enough.
      *
      * @dataProvider casterProvider
-     * @param \Kwaadpepper\Serial\SerialCaster $ignored
-     * @param string                           $converterClass
+     * @param \Closure $casterFactory
      * @return void
-     *
-     * @phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter.FoundInExtendedClassBeforeLastUsed
      */
-    public function testBreakIfCharListIsTooShort(SerialCaster $ignored, string $converterClass)
+    public function testBreakIfCharListIsTooShort(\Closure $casterFactory)
     {
-        // phpcs:enable
         // * GIVEN
-        $number          = 14776336;
         $seed            = self::SEED;
         $length          = self::LENGTH;
-        $shortDictCaster = new SerialCaster(
-            new $converterClass(),
-            new FisherYatesShuffler(),
-            '01'
-        );
+        $chars           = '01';
+        $number          = 14776336;
+        $shortDictCaster = $casterFactory($seed, $length, $chars);
 
         // * THEN
         $this->expectException(ConfigurationException::class);
 
         // * WHEN
-        $shortDictCaster->encode($number, $seed, $length);
+        $shortDictCaster->encode($number);
     }
 
     /**
      * Tests encode and decode random values
      *
      * @dataProvider casterProvider
-     * @param \Kwaadpepper\Serial\SerialCaster $caster
+     * @param \Closure $casterFactory
      * @return void
      */
-    public function testEncodeAndDecodeWithRandomValues(SerialCaster $caster)
+    public function testEncodeAndDecodeWithRandomValues(\Closure $casterFactory)
     {
+        // * GIVEN
+        $caster = $casterFactory();
         srand();
         $loops = rand(50, 70);
+
         for ($i = 0; $i <= $loops; $i++) {
-            // * GIVEN
             srand();
             $randomInteger = rand(0, 999999);
-            $seed          = self::SEED;
-            $length        = self::LENGTH;
 
             // * WHEN
-            $serial        = $caster->encode($randomInteger, $seed, $length);
-            $decodedNumber = $caster->decode($serial, $seed);
+            $serial        = $caster->encode($randomInteger);
+            $decodedNumber = $caster->decode($serial);
 
             // * THEN
             $this->assertEquals(
@@ -331,12 +339,13 @@ class SerialCasterTest extends TestCase
      * Tests speed creating coupons.
      *
      * @dataProvider casterProvider
-     * @param \Kwaadpepper\Serial\SerialCaster $caster
+     * @param \Closure $casterFactory
      * @return void
      */
-    public function testSpeedTestOnCouponGeneration(SerialCaster $caster)
+    public function testSpeedTestOnCouponGeneration(\Closure $casterFactory)
     {
         // * GIVEN
+        $caster                  = $casterFactory();
         $acceptableTimeInSeconds = 4;
         $numberOfCoupons         = 999;
         $coupons                 = [];
@@ -346,7 +355,7 @@ class SerialCasterTest extends TestCase
         for ($i = 0; $i <= $numberOfCoupons; $i++) {
             srand();
             $randomInteger = rand(0, $numberOfCoupons);
-            $coupons[]     = $caster->encode($randomInteger, self::SEED, self::LENGTH);
+            $coupons[]     = $caster->encode($randomInteger);
         }
         $end = hrtime(true);
 
@@ -367,19 +376,20 @@ class SerialCasterTest extends TestCase
      * Tests speed reading coupons.
      *
      * @dataProvider casterProvider
-     * @param \Kwaadpepper\Serial\SerialCaster $caster
+     * @param \Closure $casterFactory
      * @return void
      */
-    public function testSpeedTestOnCouponDecode(SerialCaster $caster)
+    public function testSpeedTestOnCouponDecode(\Closure $casterFactory)
     {
         // * GIVEN
+        $caster                  = $casterFactory();
         $acceptableTimeInSeconds = 4;
         $numberOfCoupons         = 999;
         $coupons                 = [];
         for ($i = 1; $i <= $numberOfCoupons; $i++) {
             srand();
             $randomInteger = rand(1, $numberOfCoupons);
-            $coupons[]     = $caster->encode($randomInteger, self::SEED, self::LENGTH);
+            $coupons[]     = $caster->encode($randomInteger);
         }
         $numberOfCoupons = count($coupons);
         $decodedCoupons  = [];
@@ -387,7 +397,7 @@ class SerialCasterTest extends TestCase
         // * WHEN
         $start = hrtime(true);
         for ($i = 0; $i < $numberOfCoupons; $i++) {
-            $decodedCoupons[] = $caster->decode($coupons[$i], self::SEED);
+            $decodedCoupons[] = $caster->decode($coupons[$i]);
         }
         $end = hrtime(true);
 
@@ -402,5 +412,38 @@ class SerialCasterTest extends TestCase
                 ($end - $start) / 1e+9
             )
         );
+    }
+
+    /**
+     * Build a SerialCaster instance
+     *
+     * @param \Kwaadpepper\Serial\Converters\BaseConverter $converter
+     * @param \Kwaadpepper\Serial\Shufflers\Shuffler|null  $shuffler
+     * @param integer|null                                 $seed
+     * @param integer|null                                 $length
+     * @param string|null                                  $chars
+     * @return \Kwaadpepper\Serial\SerialCaster
+     */
+    private function buildSerialCaster(
+        BaseConverter $converter,
+        ?Shuffler $shuffler = null,
+        ?int $seed = null,
+        ?int $length = null,
+        ?string $chars = null
+    ): SerialCaster {
+        $builder = (new SerialCasterBuilder($converter))
+            ->withShuffler($shuffler);
+
+        if ($seed !== null) {
+            $builder->withSeed($seed);
+        }
+        if ($length !== null) {
+            $builder->withLength($length);
+        }
+        if ($chars !== null) {
+            $builder->withChars($chars);
+        }
+
+        return $builder->build();
     }
 }
