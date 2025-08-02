@@ -21,13 +21,34 @@ class GmpBaseConverter implements BaseConverter
             throw new \Error('L\'extension GMP est requise.');
         }
 
-        if ($fromBaseInput === $toBaseInput) {
-            return $numberInput;
+        $fromBase      = strlen($fromBaseInput);
+        $toBase        = strlen($toBaseInput);
+        $numberChars   = str_split($numberInput);
+        $fromBaseChars = str_split($fromBaseInput);
+        $toBaseChars   = str_split($toBaseInput);
+
+        // 1: Convert the source base to base 10 (decimal) using GMP
+        $decimalValueGmp = gmp_init(0);
+        foreach ($numberChars as $char) {
+            $pos             = array_search($char, $fromBaseChars, true);
+            $decimalValueGmp = gmp_add(gmp_mul($decimalValueGmp, $fromBase), $pos);
         }
 
-        $decimalNumber = gmp_init($numberInput, strlen($fromBaseInput));
-        $result        = gmp_strval($decimalNumber, strlen($toBaseInput));
+        // 2: Convert from base 10 to the destination base
+        if (gmp_cmp($decimalValueGmp, 0) === 0) {
+            return $toBaseChars[0];
+        }
 
-        return (string)$result;
+        $result = '';
+        while (gmp_cmp($decimalValueGmp, 0) > 0) {
+            // Gmp_div_qr divides the number and returns both quotient and remainder.
+            // $qr[0] = quotient, $qr[1] = remainder.
+            $qr              = gmp_div_qr($decimalValueGmp, $toBase);
+            $remainder       = gmp_intval($qr[1]);
+            $result          = $toBaseChars[$remainder] . $result;
+            $decimalValueGmp = $qr[0];
+        }
+
+        return $result;
     }
 }

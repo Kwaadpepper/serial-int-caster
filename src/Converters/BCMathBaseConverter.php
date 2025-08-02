@@ -20,36 +20,37 @@ class BCMathBaseConverter implements BaseConverter
         if (!extension_loaded('bcmath')) {
             throw new \Error('L\'extension bcmath est requise.');
         }
-        $fromBase  = str_split($fromBaseInput, 1);
-        $toBase    = str_split($toBaseInput, 1);
-        $number    = str_split($numberInput, 1);
-        $fromLen   = count($fromBase);
-        $toLen     = count($toBase);
-        $numberLen = count($number);
-        $retVal    = '';
 
-        if ($fromLen == $toLen) {
-            return $numberInput;
-        }
+        $fromBase      = (string)strlen($fromBaseInput);
+        $toBase        = (string)strlen($toBaseInput);
+        $numberChars   = str_split($numberInput);
+        $fromBaseChars = str_split($fromBaseInput);
+        $toBaseChars   = str_split($toBaseInput);
 
+        // 1: Convert the source base to base 10 (decimal) using BCMath
         $decimalValue = '0';
-        for ($i = 1; $i <= $numberLen; $i++) {
-            $decimalValue = bcadd($decimalValue, bcmul(
-                (string)array_search($number[$i - 1], $fromBase),
-                bcpow((string)$fromLen, (string)($numberLen - $i))
-            ));
+        foreach ($numberChars as $char) {
+            $pos = array_search($char, $fromBaseChars, true);
+            if ($pos === false) {
+                 // Handle the case where the character is not found in the base.
+                continue;
+            }
+            $decimalValue = bcadd(bcmul($decimalValue, $fromBase), (string)$pos);
         }
 
-        if ($toLen == 10) {
-            return $decimalValue;
+        // 2: Convert from base 10 to the destination base
+        if (bccomp($decimalValue, '0') === 0) {
+            return $toBaseChars[0];
         }
 
-        $retVal = '';
+        $result = '';
         while (bccomp($decimalValue, '0') > 0) {
-            $retVal       = $toBase[bcmod($decimalValue, (string)$toLen)] . $retVal;
-            $decimalValue = bcdiv($decimalValue, (string)$toLen, 0);
+            $remainder = bcmod($decimalValue, $toBase);
+            // Use the remainder to find the corresponding character in the destination base.
+            $result       = $toBaseChars[(int)$remainder] . $result;
+            $decimalValue = bcdiv($decimalValue, $toBase, 0);
         }
 
-        return $retVal == '' ? '0' : $retVal;
+        return $result;
     }
 }
