@@ -2,6 +2,9 @@
 
 namespace Kwaadpepper\Serial;
 
+use Kwaadpepper\Serial\Converters\BCMathBaseConverter;
+use Kwaadpepper\Serial\Converters\GmpBaseConverter;
+use Kwaadpepper\Serial\Converters\NativeBaseConverter;
 use Kwaadpepper\Serial\Exceptions\SerialCasterException;
 
 /**
@@ -19,6 +22,9 @@ final class SerialCaster
 
     /** @var \Kwaadpepper\Serial\FisherYatesShuffler */
     private static $shuffler;
+
+    /** @var \Kwaadpepper\Serial\Converters\BaseConverter Le moteur de conversion de base. */
+    private static $converter;
 
     /**
      * Available chars for Serial generation
@@ -89,7 +95,8 @@ final class SerialCaster
 
         if ($charsCount !== strlen(self::$chars)) {
             throw new SerialCasterException(sprintf(
-                '%s::decode la liste de caractère pour décoder ne semble pas correspondre à celui utilisé pour l\'encodage',
+                '%s::decode la liste de caractère pour décoder ne semble
+                pas correspondre à celui utilisé pour l\'encodage',
                 __CLASS__
             ));
         }
@@ -209,6 +216,24 @@ final class SerialCaster
     }
 
     /**
+     * Choisit et initialise le moteur de conversion approprié.
+     *
+     * @return void
+     */
+    private static function setupConverter(): void
+    {
+        if (!self::$converter) {
+            if (extension_loaded('gmp')) {
+                self::$converter = new GmpBaseConverter();
+            } elseif (extension_loaded('bcmath')) {
+                self::$converter = new BCMathBaseConverter();
+            } else {
+                self::$converter = new NativeBaseConverter();
+            }
+        }
+    }
+
+    /**
      * Converts any number from a base to another using chars
      *
      * @param string $numberInput
@@ -219,57 +244,13 @@ final class SerialCaster
      */
     private static function convBase(string $numberInput, string $fromBaseInput, string $toBaseInput): string
     {
-        if ($fromBaseInput === $toBaseInput) {
-            return $numberInput;
-        }
+        self::setupConverter();
 
-        $fromBase = str_split($fromBaseInput);
-        $toBase   = str_split($toBaseInput);
-        $fromLen  = strlen($fromBaseInput);
-        $toLen    = strlen($toBaseInput);
-
-        if ($fromBaseInput !== self::BASE10) {
-            $number    = str_split($numberInput);
-            $numberLen = strlen($numberInput);
-            $base10    = '0';
-            for ($i = 1; $i <= $numberLen; $i++) {
-                $pos    = array_search($number[$i - 1], $fromBase);
-                $base10 = bcadd($base10, bcmul($pos, bcpow($fromLen, $numberLen - $i)));
-            }
-        } else {
-            $base10 = $numberInput;
-        }
-
-        if ($toBaseInput === self::BASE10) {
-            return $base10;
-        }
-
-        // If the number is small enough, we can avoid using bcmath.
-        if (bccomp($base10, PHP_INT_MAX) <= 0) {
-            $num_int = (int)$base10;
-            if ($num_int < $toLen) {
-                return $toBase[$num_int];
-            }
-            $retval = '';
-            while ($num_int > 0) {
-                $retval  = $toBase[$num_int % $toLen] . $retval;
-                $num_int = (int)($num_int / $toLen);
-            }
-            return $retval;
-        }
-
-        // If the number is too large, we use bcmath to handle it.
-        if (bccomp($base10, $toLen) == -1) {
-            return $toBase[$base10];
-        }
-
-        $retval = '';
-        while (bccomp($base10, '0') > 0) {
-            $retval = $toBase[bcmod($base10, $toLen)] . $retval;
-            $base10 = bcdiv($base10, $toLen, 0);
-        }
-
-        return $retval;
+        return self::$converter->convert(
+            $numberInput,
+            $fromBaseInput,
+            $toBaseInput
+        );
     }
 
     /**
