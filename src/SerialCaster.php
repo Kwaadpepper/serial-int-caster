@@ -30,8 +30,6 @@ final class SerialCaster
     /**
      * Encode an integer using chars generating a serial of a minimum length
      *
-     * Note: if $seed is equal to 0 it wont be used
-     *
      * @param integer $number The number to encode in the serial string.
      * @param integer $seed   The seed used to suffle the serial bytes order.
      * @param integer $length The serial desired length.
@@ -56,8 +54,6 @@ final class SerialCaster
 
     /**
      * Decode an integer using chars
-     *
-     * Note: if $seed is equal to 0 it wont be used
      *
      * @param string  $serial The serial ton decode.
      * @param integer $seed   The seed used to randomize the serial.
@@ -200,7 +196,6 @@ final class SerialCaster
      */
     private static function setupDefaultChars(): void
     {
-        // Default chars.
         $defaultChars = implode(range('a', 'z')) .
         implode(range('A', 'Z')) .
         implode(range('0', '9'));
@@ -223,15 +218,15 @@ final class SerialCaster
             return $numberInput;
         }
 
-        $fromBase  = str_split($fromBaseInput);
-        $toBase    = str_split($toBaseInput);
-        $number    = str_split($numberInput);
-        $fromLen   = strlen($fromBaseInput);
-        $toLen     = strlen($toBaseInput);
-        $numberLen = strlen($numberInput);
+        $fromBase = str_split($fromBaseInput);
+        $toBase   = str_split($toBaseInput);
+        $fromLen  = strlen($fromBaseInput);
+        $toLen    = strlen($toBaseInput);
 
         if ($fromBaseInput !== self::BASE10) {
-            $base10 = '0';
+            $number    = str_split($numberInput);
+            $numberLen = strlen($numberInput);
+            $base10    = '0';
             for ($i = 1; $i <= $numberLen; $i++) {
                 $pos    = array_search($number[$i - 1], $fromBase);
                 $base10 = bcadd($base10, bcmul($pos, bcpow($fromLen, $numberLen - $i)));
@@ -244,6 +239,21 @@ final class SerialCaster
             return $base10;
         }
 
+        // If the number is small enough, we can avoid using bcmath.
+        if (bccomp($base10, PHP_INT_MAX) <= 0) {
+            $num_int = (int)$base10;
+            if ($num_int < $toLen) {
+                return $toBase[$num_int];
+            }
+            $retval = '';
+            while ($num_int > 0) {
+                $retval  = $toBase[$num_int % $toLen] . $retval;
+                $num_int = (int)($num_int / $toLen);
+            }
+            return $retval;
+        }
+
+        // If the number is too large, we use bcmath to handle it.
         if (bccomp($base10, $toLen) == -1) {
             return $toBase[$base10];
         }
@@ -263,7 +273,6 @@ final class SerialCaster
      * @param integer $number
      * @param integer $base
      * @return integer
-     * @url https://www.geeksforgeeks.org/given-number-n-decimal-base-find-number-digits-base-base-b/
      */
     private static function calculateNewBaseLengthFromBase10(int $number, int $base): int
     {
