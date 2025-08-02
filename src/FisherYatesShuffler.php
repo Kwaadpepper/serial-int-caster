@@ -17,7 +17,7 @@ class FisherYatesShuffler
     /** @var \mersenne_twister\twister $twister */
     private $twister;
 
-    /** @var string $seed */
+    /** @var integer $seed */
     private $seed;
 
     /**
