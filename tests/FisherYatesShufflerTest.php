@@ -2,11 +2,24 @@
 
 namespace Tests;
 
-use Kwaadpepper\Serial\FisherYatesShuffler;
+use Kwaadpepper\Serial\Shufflers\FisherYatesShuffler;
 use PHPUnit\Framework\TestCase;
 
 class FisherYatesShufflerTest extends TestCase
 {
+    /** @var \Kwaadpepper\Serial\Shufflers\Shuffler */
+    private $shuffler;
+
+    /**
+     * Set up the test environment.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->shuffler = new FisherYatesShuffler();
+    }
     /**
      * Test can shuffle string
      *
@@ -14,12 +27,17 @@ class FisherYatesShufflerTest extends TestCase
      */
     public function testShuffle()
     {
-        $shuffler = new FisherYatesShuffler(1492);
-        $string   = 'I love donuts';
-        for ($i = 99; $i > 0; $i--) {
-            $shuffler->shuffle($string);
-        }
-        $this->assertTrue(true);
+        // * GIVEN
+        $seed           = 1492;
+        $string         = 'I love donuts';
+        $originalString = $string;
+
+        // * WHEN
+        $this->shuffler->shuffle($string, $seed);
+
+        // * THEN
+        $this->assertNotEquals($string, $originalString);
+        $this->assertEquals(count_chars($originalString, 1), count_chars($string, 1));
     }
 
     /**
@@ -29,27 +47,36 @@ class FisherYatesShufflerTest extends TestCase
      */
     public function testUnshuffle()
     {
-        $shuffler = new FisherYatesShuffler(1492);
-        $string   = 'uv otsId lnoe';
-        for ($i = 99; $i > 0; $i--) {
-            $shuffler->unshuffle($string);
-        }
-        $this->assertTrue(true);
+        // * GIVEN
+        $seed           = 1492;
+        $shuffledString = 'uv otsId lnoe';
+        $expectedString = 'I love donuts';
+
+        // * WHEN
+        $this->shuffler->unshuffle($shuffledString, $seed);
+
+        // * THEN
+        $this->assertEquals($expectedString, $shuffledString);
     }
 
     /**
-     * Test can retireve shuffled string
+     * Test can retrieve shuffled string
      *
      * @return void
      */
     public function testRetieveUnshuffle()
     {
         for ($i = 999; $i > 0; $i--) {
+            // * GIVEN
+            $seed      = mt_rand(0, 9999999);
             $oldString = $this->generateRandomString();
             $string    = $oldString;
-            $shuffler  = new FisherYatesShuffler(mt_rand(0, 9999999));
-            $shuffler->shuffle($string);
-            $shuffler->unshuffle($string);
+
+            // * WHEN
+            $this->shuffler->shuffle($string, $seed);
+            $this->shuffler->unshuffle($string, $seed);
+
+            // * THEN
             $this->assertEquals($oldString, $string);
         }
     }

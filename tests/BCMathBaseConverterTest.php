@@ -38,9 +38,9 @@ class BCMathBaseConverterTest extends TestCase
      */
     public function canPerformStandardConversions(): void
     {
-        $base10 = '0123456789';
-        $base16 = '0123456789ABCDEF';
-        $base2  = '01';
+        $base10 = str_split('0123456789');
+        $base16 = str_split('0123456789ABCDEF');
+        $base2  = str_split('01');
 
         // Hexadécimal -> Décimal.
         $this->assertSame('255', $this->converter->convert('FF', $base16, $base10));
@@ -59,9 +59,9 @@ class BCMathBaseConverterTest extends TestCase
      */
     public function handlesZeroConversionCorrectly(): void
     {
-        $base10     = '0123456789';
-        $base2      = '01';
-        $customBase = 'abcdef';
+        $base10     = str_split('0123456789');
+        $base2      = str_split('01');
+        $customBase = str_split('abcdef');
 
         // The conversion of '0' should return the first character of the destination base.
         $this->assertSame('0', $this->converter->convert('0', $base10, $base2));
@@ -75,8 +75,8 @@ class BCMathBaseConverterTest extends TestCase
      */
     public function canConvertBetweenNonDecimalBases(): void
     {
-        $base16 = '0123456789ABCDEF';
-        $base2  = '01';
+        $base16 = str_split('0123456789ABCDEF');
+        $base2  = str_split('01');
 
         // Hex -> Binary.
         // A5 (hex) = 165 (dec) = 10100101 (bin).
@@ -93,8 +93,8 @@ class BCMathBaseConverterTest extends TestCase
         // A very large number in hexadecimal (similar to a SHA-256 hash).
         $largeHex = '115df4f8535b44eff4c34a8de4631a5c249f390d405388c2273e93a652f143d4';
 
-        $base16 = '0123456789abcdef';
-        $base62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $base16 = str_split('0123456789abcdef');
+        $base62 = str_split('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
         // Testing a round-trip conversion. The final result should match the original.
         $convertedToBase62 = $this->converter->convert($largeHex, $base16, $base62);
@@ -111,8 +111,8 @@ class BCMathBaseConverterTest extends TestCase
     public function preservesCaseDuringConversion(): void
     {
         // A base that contains both uppercase and lowercase characters is essential here.
-        $base62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $base10 = '0123456789';
+        $base62 = str_split('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+        $base10 = str_split('0123456789');
 
         // A mixed-case input string.
         $mixedCaseInput = 'aBc1DeF2gH';

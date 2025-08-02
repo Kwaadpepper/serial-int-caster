@@ -16,7 +16,7 @@ class GmpBaseConverterTest extends TestCase
     private $converter;
 
     /**
-     * Cette méthode est appelée avant chaque test.
+     * This method is called before each test.
      *
      * @return void
      */
@@ -24,7 +24,7 @@ class GmpBaseConverterTest extends TestCase
     {
         parent::setUp();
         if (!extension_loaded('gmp')) {
-            $this->markTestSkipped('L\'extension GMP est requise pour ces tests.');
+            $this->markTestSkipped('The GMP extension is required for these tests.');
         }
         $this->converter = new GmpBaseConverter();
     }
@@ -36,9 +36,9 @@ class GmpBaseConverterTest extends TestCase
      */
     public function canPerformStandardConversions(): void
     {
-        $base10 = '0123456789';
-        $base16 = '0123456789ABCDEF';
-        $base2  = '01';
+        $base10 = str_split('0123456789');
+        $base16 = str_split('0123456789ABCDEF');
+        $base2  = str_split('01');
 
         // Hex -> Decimal.
         $this->assertSame('255', $this->converter->convert('FF', $base16, $base10));
@@ -57,9 +57,9 @@ class GmpBaseConverterTest extends TestCase
      */
     public function handlesZeroConversionCorrectly(): void
     {
-        $base10     = '0123456789';
-        $base2      = '01';
-        $customBase = 'abcdef';
+        $base10     = str_split('0123456789');
+        $base2      = str_split('01');
+        $customBase = str_split('abcdef');
 
         $this->assertSame('0', $this->converter->convert('0', $base10, $base2));
         $this->assertSame('a', $this->converter->convert('0', $base10, $customBase));
@@ -72,8 +72,8 @@ class GmpBaseConverterTest extends TestCase
      */
     public function canConvertBetweenNonDecimalBases(): void
     {
-        $base16 = '0123456789ABCDEF';
-        $base2  = '01';
+        $base16 = str_split('0123456789ABCDEF');
+        $base2  = str_split('01');
 
         $this->assertSame('10100101', $this->converter->convert('A5', $base16, $base2));
     }
@@ -87,8 +87,8 @@ class GmpBaseConverterTest extends TestCase
     {
         $largeHex = '115df4f8535b44eff4c34a8de4631a5c249f390d405388c2273e93a652f143d4';
 
-        $base16 = '0123456789abcdef';
-        $base62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $base16 = str_split('0123456789abcdef');
+        $base62 = str_split('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
         $convertedToBase62 = $this->converter->convert($largeHex, $base16, $base62);
         $revertedToBase16  = $this->converter->convert($convertedToBase62, $base62, $base16);
@@ -104,8 +104,8 @@ class GmpBaseConverterTest extends TestCase
     public function preservesCaseDuringConversion(): void
     {
         // A base that contains both uppercase and lowercase characters is essential here.
-        $base62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $base10 = '0123456789';
+        $base62 = str_split('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+        $base10 = str_split('0123456789');
 
         // A mixed-case input string.
         $mixedCaseInput = 'aBc1DeF2gH';
@@ -120,7 +120,7 @@ class GmpBaseConverterTest extends TestCase
         $this->assertSame(
             $mixedCaseInput,
             $revertedResult,
-            'La casse doit être parfaitement conservée après une conversion aller-retour.'
+            'Case must be perfectly preserved after a round-trip conversion.'
         );
     }
 }

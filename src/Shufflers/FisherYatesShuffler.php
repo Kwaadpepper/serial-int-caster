@@ -2,56 +2,40 @@
 
 declare(strict_types=1);
 
-namespace Kwaadpepper\Serial;
+namespace Kwaadpepper\Serial\Shufflers;
 
 use mersenne_twister\twister;
 
 /**
- *
- * Fisher Yates Seeded shuffle using improved algorithm and seed
+ * Fisher Yates Seeded shuffle using improved algorithm
  *
  * @author Jérémy Munsch <github@jeremydev.ovh>
  * @url https://stackoverflow.com/questions/24262147/can-a-seeded-shuffle-be-reversed
  * @url https://fr.wikipedia.org/wiki/M%C3%A9lange_de_Fisher-Yates
  */
-class FisherYatesShuffler
+final class FisherYatesShuffler implements Shuffler
 {
-    /** @var \mersenne_twister\twister $twister */
+    /** @var \mersenne_twister\twister */
     private $twister;
 
-    /** @var integer $seed */
-    private $seed;
-
     /**
-     * FisherYatesShuffler
-     * @param integer $seed
-     * @return void
+     * FisherYatesShuffler constructor.
      */
-    public function __construct(int $seed)
+    public function __construct()
     {
-        $this->seed    = $seed;
         $this->twister = new twister();
     }
 
     /**
-     * Get the actual seed.
+     * Shuffle a string with a given seed.
      *
-     * @return integer
-     */
-    public function seed(): int
-    {
-        return $this->seed;
-    }
-
-    /**
-     * Shuffle a string
-     *
-     * @param string $string
+     * @param string  $string The string to shuffle.
+     * @param integer $seed   The seed for the shuffle algorithm.
      * @return void
      */
-    public function shuffle(string &$string)
+    public function shuffle(string &$string, int $seed): void
     {
-        $this->twister->init_with_integer($this->seed);
+        $this->twister->init_with_integer($seed);
         $length = strlen($string);
         for ($i = $length - 1; $i >= 1; $i--) {
             $j          = $this->random(0, $i);
@@ -62,14 +46,15 @@ class FisherYatesShuffler
     }
 
     /**
-     * Unshuffle a string
+     * Unshuffle a string with a given seed.
      *
-     * @param string $string
+     * @param string  $string The string to unshuffle.
+     * @param integer $seed   The seed for the unshuffle algorithm.
      * @return void
      */
-    public function unshuffle(string &$string)
+    public function unshuffle(string &$string, int $seed): void
     {
-        $this->twister->init_with_integer($this->seed);
+        $this->twister->init_with_integer($seed);
         $length  = strlen($string);
         $indices = [];
         for ($i = $length - 1; $i >= 1; $i--) {

@@ -30,12 +30,12 @@ final class NativeBaseConverterTest extends TestCase
      * Test conversion of various numbers between bases.
      *
      * @param string $number   The number to convert.
-     * @param string $fromBase The base to convert from.
-     * @param string $toBase   The base to convert to.
+     * @param array  $fromBase The base to convert from.
+     * @param array  $toBase   The base to convert to.
      * @param string $expected The expected result of the conversion.
      * @return void
      */
-    public function testConvert(string $number, string $fromBase, string $toBase, string $expected): void
+    public function testConvert(string $number, array $fromBase, array $toBase, string $expected): void
     {
         $result = $this->converter->convert($number, $fromBase, $toBase);
         $this->assertSame($expected, $result);
@@ -51,14 +51,13 @@ final class NativeBaseConverterTest extends TestCase
     public function testConvertThrowsExceptionOnHighBase(): void
     {
         $this->expectException(\Error::class);
-
         $this->expectExceptionMessage(
-            'NativeConverter ne supporte pas la conversion à partir de bases supérieures à 10,
-                il faut utiliser l\'extension bcmath ou gmp.'
+            'NativeConverter does not support conversion from bases greater than 10,
+                please use the BCMath or GMP extension.'
         );
 
-        $base62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $base10 = '0123456789';
+        $base62 = str_split('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+        $base10 = str_split('0123456789');
 
         $this->converter->convert('3D7', $base62, $base10);
     }
@@ -70,9 +69,9 @@ final class NativeBaseConverterTest extends TestCase
      */
     public function provideConversionData(): array
     {
-        $base8  = '01234567';
-        $base10 = '0123456789';
-        $base2  = '01';
+        $base8  = str_split('01234567');
+        $base10 = str_split('0123456789');
+        $base2  = str_split('01');
 
         return [
             'base10_to_base10_no_change' => ['987654321', $base10, $base10, '987654321'],

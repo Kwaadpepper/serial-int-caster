@@ -4,6 +4,6 @@ declare(strict_types=1);
 
 namespace Kwaadpepper\Serial\Exceptions;
 
-abstract class SerialCasterException extends \RuntimeException
+class ConfigurationException extends SerialCasterException
 {
 }

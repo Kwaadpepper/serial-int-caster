@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Kwaadpepper\Serial;
 
-use Kwaadpepper\Serial\Converters\BCMathBaseConverter;
-use Kwaadpepper\Serial\Converters\GmpBaseConverter;
-use Kwaadpepper\Serial\Converters\NativeBaseConverter;
-use Kwaadpepper\Serial\Exceptions\SerialCasterException;
+use Kwaadpepper\Serial\Converters\BaseConverter;
+use Kwaadpepper\Serial\Exceptions\ConfigurationException;
+use Kwaadpepper\Serial\Exceptions\InvalidSerialException;
+use Kwaadpepper\Serial\Shufflers\Shuffler;
 
 /**
  * Encode Integers to a Serial String and decode them
@@ -20,115 +20,167 @@ final class SerialCaster
     /**
      * Base 10 bytes
      */
-    private const BASE10 = '0123456789';
-
-    /** @var \Kwaadpepper\Serial\FisherYatesShuffler */
-    private static $shuffler;
+    private const BASE10 = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
     /** @var \Kwaadpepper\Serial\Converters\BaseConverter Le moteur de conversion de base. */
-    private static $converter;
+    private $converter;
+
+    /** @var \Kwaadpepper\Serial\Shufflers\Shuffler|null */
+    private $shuffler;
 
     /**
      * Available chars for Serial generation
      *
-     * @var string
+     * @var array<int, string>
      */
-    private static $chars = '';
+    private $chars = [];
+
+    /** @var integer The seed used for shuffling. */
+    private $seed;
+
+    /** @var integer The minimum length of serial numbers. */
+    private $length;
+
+    /**
+     * SerialCaster constructor.
+     *
+     * @param \Kwaadpepper\Serial\Converters\BaseConverter $converter
+     * @param \Kwaadpepper\Serial\Shufflers\Shuffler|null  $shuffler
+     * @param string|null                                  $chars
+     * @param integer                                      $seed
+     * @param integer                                      $length
+     * @throws \Kwaadpepper\Serial\Exceptions\ConfigurationException If the chars are not valid.
+     */
+    public function __construct(
+        BaseConverter $converter,
+        ?Shuffler $shuffler,
+        ?string $chars,
+        int $seed,
+        int $length
+    ) {
+        $this->converter = $converter;
+        $this->shuffler  = $shuffler;
+        $this->seed      = $seed;
+        $this->length    = $length;
+        $this->setChars($chars);
+    }
 
     /**
      * Encode an integer using chars generating a serial of a minimum length
      *
      * @param integer $number The number to encode in the serial string.
-     * @param integer $seed   The seed used to suffle the serial bytes order.
-     * @param integer $length The serial desired length.
-     * @param string  $chars  The bytes used to generate the serial string.
-     * @return string         The serial
-     * @throws \Kwaadpepper\Serial\Exceptions\SerialCasterException If a config error happens.
+     * @return string The serial
+     * @throws \Kwaadpepper\Serial\Exceptions\ConfigurationException If a config error happens.
      */
-    public static function encode(int $number, int $seed = 0, int $length = 6, string $chars = ''): string
+    public function encode(int $number): string
     {
-        self::init($number, $length, $chars);
-        $charsCount = str_pad((string)strlen(self::$chars), 2, '0', \STR_PAD_LEFT);
-        $outString  = (string)$number . $charsCount;
-        $outString  = str_pad(
-            self::convBase($outString, self::BASE10, self::$chars),
-            $length,
-            self::$chars[0],
+        $this->validateEncodingParameters($number, $this->length);
+
+        $charsCount   = str_pad((string)count($this->chars), 2, '0', \STR_PAD_LEFT);
+        $paddedNumber = (string)$number . $charsCount;
+
+        $convertedSerial = $this->convBase($paddedNumber, self::BASE10, $this->chars);
+
+        $paddedSerial = str_pad(
+            $convertedSerial,
+            $this->length,
+            $this->chars[0],
             \STR_PAD_LEFT
         );
-        self::shuffle($seed, $outString);
-        return $outString;
+
+        $this->shuffle($this->seed, $paddedSerial);
+
+        return $paddedSerial;
     }
 
     /**
      * Decode an integer using chars
      *
-     * @param string  $serial The serial ton decode.
-     * @param integer $seed   The seed used to randomize the serial.
-     * @param string  $chars  The bytes used to generate the serial.
-     * @return integer         The number encoded in the serial
-     * @throws SerialCasterException If a wrong serial or charlist is given.
+     * @param string $serial The serial ton decode.
+     * @return integer The number encoded in the serial
+     * @throws \Kwaadpepper\Serial\Exceptions\ConfigurationException If a wrong serial or charlist is given.
+     * @throws \Kwaadpepper\Serial\Exceptions\InvalidSerialException If the serial is invalid.
+     * @throws \Kwaadpepper\Serial\Exceptions\InvalidNumberException If the number of chars does not match the
+     *  expected count.
+     *
+     * @phpcs:ignore Squiz.Commenting.FunctionCommentThrowTag.WrongNumber
      */
-    public static function decode(string $serial, int $seed = 0, string $chars = ''): int
+    public function decode(string $serial): int
     {
-        self::setChars($chars);
-        self::unshuffle($seed, $serial);
-        $serialLength = strlen($serial);
+        $this->unshuffle($this->seed, $serial);
+        $this->validateSerialChars($serial);
 
-        $charsMap = array_flip(str_split(self::$chars));
+        $decodedString = $this->convBase($serial, $this->chars, self::BASE10);
+        $this->validateDecodedString($decodedString);
+
+        $charsCountFromSerial = (int)substr($decodedString, -2);
+        $encodedNumber        = (int)substr($decodedString, 0, strlen($decodedString) - 2);
+
+        if ($charsCountFromSerial !== count($this->chars)) {
+            throw new InvalidSerialException(
+                'La liste de caractères pour décoder ne semble pas correspondre à celle utilisée pour l\'encodage.'
+            );
+        }
+
+        return $encodedNumber;
+    }
+
+    /**
+     * Validate the characters in the serial.
+     *
+     * @param string $serial The serial to validate.
+     * @return void
+     * @throws \Kwaadpepper\Serial\Exceptions\InvalidSerialException If an invalid character is found.
+     */
+    private function validateSerialChars(string $serial): void
+    {
+        $serialLength = strlen($serial);
         for ($i = 0; $i < $serialLength; $i++) {
-            if (!isset($charsMap[$serial[$i]])) {
-                throw new SerialCasterException(sprintf(
-                    '%s::decode un caractère non valide `%s` est présent',
-                    __CLASS__,
+            if (!in_array($serial[$i], $this->chars, true)) {
+                throw new InvalidSerialException(sprintf(
+                    'Un caractère non valide `%s` est présent dans la série.',
                     $serial[$i]
                 ));
             }
         }
-
-        $outNumber = self::convBase($serial, self::$chars, self::BASE10);
-
-        if (strlen($outNumber) < 3) {
-            throw new SerialCasterException(sprintf('%s::decode un code série invalide à été donné', __CLASS__));
-        }
-
-        $charsCount = (int)substr($outNumber, -2);
-        $outNumber  = (int)substr($outNumber, 0, strlen($outNumber) - 2);
-
-        if ($charsCount !== strlen(self::$chars)) {
-            throw new SerialCasterException(sprintf(
-                '%s::decode la liste de caractère pour décoder ne semble
-                pas correspondre à celui utilisé pour l\'encodage',
-                __CLASS__
-            ));
-        }
-        return $outNumber;
     }
 
     /**
-     * Initialize SerialCaster
+     * Validate the decoded string.
+     *
+     * @param string $decodedString The decoded string to validate.
+     * @return void
+     * @throws \Kwaadpepper\Serial\Exceptions\InvalidSerialException If the decoded string is too short.
+     */
+    private function validateDecodedString(string $decodedString): void
+    {
+        if (strlen($decodedString) < 3) {
+            throw new InvalidSerialException('Le code série est invalide.');
+        }
+    }
+
+    /**
+     * Validate encoding parameters
      *
      * @param integer $number
      * @param integer $length
-     * @param string  $chars
      * @return void
-     * @throws \Kwaadpepper\Serial\Exceptions\SerialCasterException If parameters are wrong.
+     * @throws \Kwaadpepper\Serial\Exceptions\ConfigurationException If parameters are wrong.
      */
-    private static function init(int $number, int $length, string $chars): void
+    private function validateEncodingParameters(int $number, int $length): void
     {
         if ($length <= 0) {
-            throw new SerialCasterException(sprintf('%s need a length of minimum 1', __CLASS__));
+            throw new ConfigurationException(sprintf('%s need a length of minimum 1', __CLASS__));
         }
-        self::setChars($chars);
-        if (strlen(self::$chars) < 2) {
-            throw new SerialCasterException(sprintf('%s need a minimum length of 2 unique chars', __CLASS__));
+        if (count($this->chars) < 2) {
+            throw new ConfigurationException(sprintf('%s need a minimum length of 2 unique chars', __CLASS__));
         }
-        if (strlen(self::$chars) > 99) {
-            throw new SerialCasterException(sprintf('%s can have a minimum length of 99 unique chars', __CLASS__));
+        if (count($this->chars) > 99) {
+            throw new ConfigurationException(sprintf('%s can have a minimum length of 99 unique chars', __CLASS__));
         }
-        $minimumLength = self::calculateNewBaseLengthFromBase10($number, strlen(self::$chars)) + 2;
+        $minimumLength = $this->calculateNewBaseLengthFromBase10($number, count($this->chars)) + 2;
         if ($length < $minimumLength) {
-            throw new SerialCasterException(sprintf(
+            throw new ConfigurationException(sprintf(
                 '%s need a minimum length of %d',
                 __CLASS__,
                 $minimumLength
@@ -144,14 +196,14 @@ final class SerialCaster
      * @param string  $serial
      * @return void
      */
-    private static function shuffle(int $seed, string &$serial): void
+    private function shuffle(int $seed, string &$serial): void
     {
-        if ($seed) {
-            self::setupShuffle($seed);
-            self::$shuffler->shuffle($serial);
-            self::rotateLeft($serial, self::sumString($serial) % strlen($serial));
+        if ($seed && $this->shuffler !== null) {
+            $this->shuffler->shuffle($serial, $seed);
+            $this->rotateLeft($serial, $this->sumString($serial) % strlen($serial));
         }
     }
+
 
     /**
      * If seed is different than 0, then unshuffles the serial bytes
@@ -161,46 +213,29 @@ final class SerialCaster
      * @param string  $serial
      * @return void
      */
-    private static function unshuffle(int $seed, string &$serial): void
+    private function unshuffle(int $seed, string &$serial): void
     {
-        if ($seed) {
-            self::setupShuffle($seed);
-            self::rotateRight($serial, self::sumString($serial) % strlen($serial));
-            self::$shuffler->unshuffle($serial);
-        }
-    }
-
-    /**
-     * Setup shuffle
-     *
-     * @param integer $seed
-     * @return void
-     */
-    private static function setupShuffle(int $seed): void
-    {
-        if (!self::$shuffler) {
-            self::$shuffler = new FisherYatesShuffler($seed);
-            return;
-        }
-        if (self::$shuffler->seed() !== $seed) {
-            self::$shuffler = new FisherYatesShuffler($seed);
+        if ($seed && $this->shuffler !== null) {
+            $this->rotateRight($serial, $this->sumString($serial) % strlen($serial));
+            $this->shuffler->unshuffle($serial, $seed);
         }
     }
 
     /**
      * Setup char dict
      *
-     * @param string $chars
+     * @param string|null $chars
      * @return void
      */
-    private static function setChars(string $chars): void
+    private function setChars(?string $chars = null): void
     {
-        if (strlen($chars)) {
-            self::$chars = count_chars($chars, 3);
+        if ($chars === null) {
+            $this->setupDefaultChars();
             return;
         }
 
-        self::setupDefaultChars();
+        $uniqueChars = count_chars($chars, 3);
+        $this->chars = str_split($uniqueChars);
     }
 
     /**
@@ -208,50 +243,32 @@ final class SerialCaster
      *
      * @return void
      */
-    private static function setupDefaultChars(): void
+    private function setupDefaultChars(): void
     {
-        $defaultChars = implode(range('a', 'z')) .
-        implode(range('A', 'Z')) .
-        implode(range('0', '9'));
+        $defaultChars = array_merge(
+            range('a', 'z'),
+            range('A', 'Z'),
+            range('0', '9')
+        );
 
-        self::$chars = count_chars($defaultChars, 3);
-    }
-
-    /**
-     * Choisit et initialise le moteur de conversion approprié.
-     *
-     * @return void
-     */
-    private static function setupConverter(): void
-    {
-        if (!self::$converter) {
-            if (extension_loaded('gmp')) {
-                self::$converter = new GmpBaseConverter();
-            } elseif (extension_loaded('bcmath')) {
-                self::$converter = new BCMathBaseConverter();
-            } else {
-                self::$converter = new NativeBaseConverter();
-            }
-        }
+        $this->chars = str_split(count_chars(implode($defaultChars), 3));
     }
 
     /**
      * Converts any number from a base to another using chars
      *
      * @param string $numberInput
-     * @param string $fromBaseInput
-     * @param string $toBaseInput
+     * @param array  $fromBase
+     * @param array  $toBase
      * @return string
      * @url https://www.php.net/manual/fr/function.base-convert.php#106546
      */
-    private static function convBase(string $numberInput, string $fromBaseInput, string $toBaseInput): string
+    private function convBase(string $numberInput, array $fromBase, array $toBase): string
     {
-        self::setupConverter();
-
-        return self::$converter->convert(
+        return $this->converter->convert(
             $numberInput,
-            $fromBaseInput,
-            $toBaseInput
+            $fromBase,
+            $toBase
         );
     }
 
@@ -262,7 +279,7 @@ final class SerialCaster
      * @param integer $base
      * @return integer
      */
-    private static function calculateNewBaseLengthFromBase10(int $number, int $base): int
+    private function calculateNewBaseLengthFromBase10(int $number, int $base): int
     {
         if ($number <= 0) {
             return 1;
@@ -277,10 +294,10 @@ final class SerialCaster
      * @param integer $distance
      * @return void
      */
-    private static function rotateLeft(string &$string, int $distance): void
+    private function rotateLeft(string &$string, int $distance): void
     {
         $string = substr($string, $distance) .
-        substr($string, 0, $distance);
+            substr($string, 0, $distance);
     }
 
     /**
@@ -290,12 +307,12 @@ final class SerialCaster
      * @param integer $distance
      * @return void
      */
-    private static function rotateRight(string &$string, int $distance): void
+    private function rotateRight(string &$string, int $distance): void
     {
         $length    = strlen($string);
         $distance %= $length;
         $string    = substr($string, $length - $distance) .
-        substr($string, 0, $length - $distance);
+            substr($string, 0, $length - $distance);
     }
 
     /**
@@ -304,7 +321,7 @@ final class SerialCaster
      * @param string $string
      * @return integer
      */
-    private static function sumString(string $string): int
+    private function sumString(string $string): int
     {
         return array_sum(array_map('ord', str_split($string)));
     }
