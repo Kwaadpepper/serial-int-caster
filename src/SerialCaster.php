@@ -6,7 +6,6 @@ namespace Kwaadpepper\Serial;
 
 use Kwaadpepper\Serial\Converters\BaseConverter;
 use Kwaadpepper\Serial\Exceptions\ConfigurationException;
-use Kwaadpepper\Serial\Exceptions\InvalidNumberException;
 use Kwaadpepper\Serial\Exceptions\InvalidSerialException;
 use Kwaadpepper\Serial\Shufflers\FisherYatesShuffler;
 
@@ -61,17 +60,26 @@ final class SerialCaster
     public function encode(int $number, int $seed = 0, int $length = 6): string
     {
         $this->validateEncodingParameters($number, $length);
-        // Add 2 chars to the length for the chars count.
-        $charsCount = str_pad((string)count($this->chars), 2, '0', \STR_PAD_LEFT);
-        $outString  = (string)$number . $charsCount;
-        $outString  = str_pad(
-            $this->convBase($outString, self::BASE10, $this->chars),
+
+        // Concatenate the number with the number of characters, ensuring it has 2 digits.
+        $charsCount   = str_pad((string)count($this->chars), 2, '0', \STR_PAD_LEFT);
+        $paddedNumber = (string)$number . $charsCount;
+
+        // Convert the padded number from base 10 to the custom base using the defined characters.
+        $convertedSerial = $this->convBase($paddedNumber, self::BASE10, $this->chars);
+
+        // Pad the converted serial to the desired length with the first character of the chars array.
+        $paddedSerial = str_pad(
+            $convertedSerial,
             $length,
             $this->chars[0],
             \STR_PAD_LEFT
         );
-        $this->shuffle($seed, $outString);
-        return $outString;
+
+        // If a seed is provided, shuffle the serial bytes order.
+        $this->shuffle($seed, $paddedSerial);
+
+        return $paddedSerial;
     }
 
     /**
@@ -84,39 +92,68 @@ final class SerialCaster
      * @throws \Kwaadpepper\Serial\Exceptions\InvalidSerialException If the serial is invalid.
      * @throws \Kwaadpepper\Serial\Exceptions\InvalidNumberException If the number of chars does not match the
      *  expected count.
+     *
+     * @phpcs:ignore Squiz.Commenting.FunctionCommentThrowTag.WrongNumber
      */
     public function decode(string $serial, int $seed = 0): int
     {
+        // Unshuffle the serial if a seed is used.
         $this->unshuffle($seed, $serial);
-        $serialLength = strlen($serial);
 
+        // Validate the characters in the serial.
+        $this->validateSerialChars($serial);
+
+        // Convert the serial from its base to base 10.
+        $decodedString = $this->convBase($serial, $this->chars, self::BASE10);
+
+        // Extract the character count and the encoded number.
+        $this->validateDecodedString($decodedString);
+
+        $charsCountFromSerial = (int)substr($decodedString, -2);
+        $encodedNumber        = (int)substr($decodedString, 0, strlen($decodedString) - 2);
+
+        // Validate that the number of characters used for encoding matches the expected count.
+        if ($charsCountFromSerial !== count($this->chars)) {
+            throw new InvalidSerialException(
+                'La liste de caractères pour décoder ne semble pas correspondre à celle utilisée pour l\'encodage.'
+            );
+        }
+
+        return $encodedNumber;
+    }
+
+    /**
+     * Validate the characters in the serial.
+     *
+     * @param string $serial The serial to validate.
+     * @return void
+     * @throws \Kwaadpepper\Serial\Exceptions\InvalidSerialException If an invalid character is found.
+     */
+    private function validateSerialChars(string $serial): void
+    {
+        $serialLength = strlen($serial);
         for ($i = 0; $i < $serialLength; $i++) {
             if (!in_array($serial[$i], $this->chars, true)) {
-                throw new ConfigurationException(sprintf(
-                    '%s::decode un caractère non valide `%s` est présent',
-                    __CLASS__,
+                throw new InvalidSerialException(sprintf(
+                    'Un caractère non valide `%s` est présent dans la série.',
                     $serial[$i]
                 ));
             }
         }
+    }
 
-        $outNumber = $this->convBase($serial, $this->chars, self::BASE10);
-
-        if (strlen($outNumber) < 3) {
-            throw new InvalidSerialException(sprintf('%s::decode un code série invalide à été donné', __CLASS__));
+    /**
+     * Validate the decoded string.
+     *
+     * @param string $decodedString The decoded string to validate.
+     * @return void
+     * @throws \Kwaadpepper\Serial\Exceptions\InvalidSerialException If the decoded string is too short.
+     */
+    private function validateDecodedString(string $decodedString): void
+    {
+        if (strlen($decodedString) < 3) {
+            throw new InvalidSerialException('Le code série est invalide.');
         }
-
-        $charsCount = (int)substr($outNumber, -2);
-        $outNumber  = (int)substr($outNumber, 0, strlen($outNumber) - 2);
-
-        if ($charsCount !== count($this->chars)) {
-            throw new InvalidNumberException(sprintf(
-                '%s::decode la liste de caractère pour décoder ne semble
-                pas correspondre à celui utilisé pour l\'encodage',
-                __CLASS__
-            ));
-        }
-        return $outNumber;
     }
 
     /**

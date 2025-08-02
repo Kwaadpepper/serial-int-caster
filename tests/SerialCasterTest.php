@@ -154,7 +154,7 @@ class SerialCasterTest extends TestCase
     public function testBreakIfSerialHasInvalidChar(SerialCaster $caster)
     {
         $this->expectException(SerialCasterException::class);
-        $this->expectExceptionMessageMatches('/un caractère non valide `\*` est présent/');
+        $this->expectExceptionMessageMatches('/Un caractère non valide `\*` est présent/');
 
         $caster->decode('*', self::SEED);
     }
@@ -169,7 +169,7 @@ class SerialCasterTest extends TestCase
     public function testBreakIfDecodedIsTooShort(SerialCaster $caster)
     {
         $this->expectException(SerialCasterException::class);
-        $this->expectExceptionMessageMatches('/un code série invalide à été donné/');
+        $this->expectExceptionMessageMatches('/Le code série est invalide/');
 
         $caster->decode('A', self::SEED);
     }
@@ -195,7 +195,7 @@ class SerialCasterTest extends TestCase
         $serial = $encoderCaster->encode(14776335, self::SEED, 26);
 
         $this->expectException(SerialCasterException::class);
-        $this->expectExceptionMessageMatches('/la liste de caractère pour décoder ne semble/');
+        $this->expectExceptionMessageMatches('/La liste de caractères pour décoder ne semble/');
 
         $decoderCaster->decode($serial, self::SEED);
     }
