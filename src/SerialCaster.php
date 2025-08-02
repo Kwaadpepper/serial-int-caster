@@ -196,13 +196,13 @@ final class SerialCaster
      */
     private function setChars(?string $chars = null): void
     {
-        if ($chars) {
-            $uniqueChars = count_chars($chars, 3);
-            $this->chars = str_split($uniqueChars);
+        if ($chars === null) {
+            $this->setupDefaultChars();
             return;
         }
 
-        $this->setupDefaultChars();
+        $uniqueChars = count_chars($chars, 3);
+        $this->chars = str_split($uniqueChars);
     }
 
     /**
