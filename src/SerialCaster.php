@@ -57,7 +57,7 @@ final class SerialCaster
      */
     public function encode(int $number, int $seed = 0, int $length = 6): string
     {
-        $this->init($number, $length);
+        $this->validateEncodingParameters($number, $length);
         $charsCount = str_pad((string)count($this->chars), 2, '0', \STR_PAD_LEFT);
         $outString  = (string)$number . $charsCount;
         $outString  = str_pad(
@@ -113,14 +113,14 @@ final class SerialCaster
     }
 
     /**
-     * Initialize SerialCaster
+     * Validate encoding parameters
      *
      * @param integer $number
      * @param integer $length
      * @return void
      * @throws \Kwaadpepper\Serial\Exceptions\SerialCasterException If parameters are wrong.
      */
-    private function init(int $number, int $length): void
+    private function validateEncodingParameters(int $number, int $length): void
     {
         if ($length <= 0) {
             throw new SerialCasterException(sprintf('%s need a length of minimum 1', __CLASS__));
