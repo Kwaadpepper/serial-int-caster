@@ -35,18 +35,33 @@ final class SerialCaster
      */
     private $chars = [];
 
+    /** @var integer La graine de mélange utilisée. */
+    private $seed;
+
+    /** @var integer La longueur minimale des numéros de série. */
+    private $length;
+
     /**
      * SerialCaster constructor.
      *
      * @param \Kwaadpepper\Serial\Converters\BaseConverter $converter
      * @param \Kwaadpepper\Serial\Shufflers\Shuffler|null  $shuffler
      * @param string|null                                  $chars
-     * @throws \Kwaadpepper\Serial\Exceptions\SerialCasterException If the chars are not valid.
+     * @param integer                                      $seed
+     * @param integer                                      $length
+     * @throws \Kwaadpepper\Serial\Exceptions\ConfigurationException If the chars are not valid.
      */
-    public function __construct(BaseConverter $converter, ?Shuffler $shuffler = null, ?string $chars = null)
-    {
+    public function __construct(
+        BaseConverter $converter,
+        ?Shuffler $shuffler = null,
+        ?string $chars = null,
+        int $seed = 0,
+        int $length = 6
+    ) {
         $this->converter = $converter;
         $this->shuffler  = $shuffler;
+        $this->seed      = $seed;
+        $this->length    = $length;
         $this->setChars($chars);
     }
 
@@ -54,32 +69,26 @@ final class SerialCaster
      * Encode an integer using chars generating a serial of a minimum length
      *
      * @param integer $number The number to encode in the serial string.
-     * @param integer $seed   The seed used to suffle the serial bytes order.
-     * @param integer $length The serial desired length.
      * @return string The serial
      * @throws \Kwaadpepper\Serial\Exceptions\ConfigurationException If a config error happens.
      */
-    public function encode(int $number, int $seed = 0, int $length = 6): string
+    public function encode(int $number): string
     {
-        $this->validateEncodingParameters($number, $length);
+        $this->validateEncodingParameters($number, $this->length);
 
-        // Concatenate the number with the number of characters, ensuring it has 2 digits.
         $charsCount   = str_pad((string)count($this->chars), 2, '0', \STR_PAD_LEFT);
         $paddedNumber = (string)$number . $charsCount;
 
-        // Convert the padded number from base 10 to the custom base using the defined characters.
         $convertedSerial = $this->convBase($paddedNumber, self::BASE10, $this->chars);
 
-        // Pad the converted serial to the desired length with the first character of the chars array.
         $paddedSerial = str_pad(
             $convertedSerial,
-            $length,
+            $this->length,
             $this->chars[0],
             \STR_PAD_LEFT
         );
 
-        // If a seed is provided, shuffle the serial bytes order.
-        $this->shuffle($seed, $paddedSerial);
+        $this->shuffle($this->seed, $paddedSerial);
 
         return $paddedSerial;
     }
@@ -87,8 +96,7 @@ final class SerialCaster
     /**
      * Decode an integer using chars
      *
-     * @param string  $serial The serial ton decode.
-     * @param integer $seed   The seed used to randomize the serial.
+     * @param string $serial The serial ton decode.
      * @return integer The number encoded in the serial
      * @throws \Kwaadpepper\Serial\Exceptions\ConfigurationException If a wrong serial or charlist is given.
      * @throws \Kwaadpepper\Serial\Exceptions\InvalidSerialException If the serial is invalid.
@@ -97,24 +105,17 @@ final class SerialCaster
      *
      * @phpcs:ignore Squiz.Commenting.FunctionCommentThrowTag.WrongNumber
      */
-    public function decode(string $serial, int $seed = 0): int
+    public function decode(string $serial): int
     {
-        // Unshuffle the serial if a seed is used.
-        $this->unshuffle($seed, $serial);
-
-        // Validate the characters in the serial.
+        $this->unshuffle($this->seed, $serial);
         $this->validateSerialChars($serial);
 
-        // Convert the serial from its base to base 10.
         $decodedString = $this->convBase($serial, $this->chars, self::BASE10);
-
-        // Extract the character count and the encoded number.
         $this->validateDecodedString($decodedString);
 
         $charsCountFromSerial = (int)substr($decodedString, -2);
         $encodedNumber        = (int)substr($decodedString, 0, strlen($decodedString) - 2);
 
-        // Validate that the number of characters used for encoding matches the expected count.
         if ($charsCountFromSerial !== count($this->chars)) {
             throw new InvalidSerialException(
                 'La liste de caractères pour décoder ne semble pas correspondre à celle utilisée pour l\'encodage.'
