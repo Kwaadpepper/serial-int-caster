@@ -272,7 +272,10 @@ final class SerialCaster
      */
     private static function calculateNewBaseLengthFromBase10(int $number, int $base): int
     {
-        return (int)(floor(log($number) / log($base)) + 1);
+        if ($number <= 0) {
+            return 1;
+        }
+        return (int)(floor(log($number, $base)) + 1);
     }
 
     /**
