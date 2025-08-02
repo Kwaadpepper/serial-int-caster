@@ -41,10 +41,9 @@ final class SerialCaster
      */
     public static function encode(int $number, int $seed = 0, int $length = 6, string $chars = ''): string
     {
-        $outString = (string)$number;
         self::init($number, $length, $chars);
         $charsCount = str_pad(strlen(self::$chars), 2, '0', \STR_PAD_LEFT);
-        $outString .= $charsCount;
+        $outString  = (string)$number . $charsCount;
         $outString  = str_pad(
             self::convBase($outString, self::BASE10, self::$chars),
             $length,
