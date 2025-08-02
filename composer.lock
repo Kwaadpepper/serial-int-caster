@@ -4,27 +4,27 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9374d252a3c4625e1214dbedf2febede",
+    "content-hash": "f4233173010ee538d30b30dff5b31df8",
     "packages": [
         {
             "name": "ruafozy/mersenne-twister",
-            "version": "1.3.0",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ruafozy/php-mersenne-twister.git",
-                "reference": "83ca113aa1e5f924d3b5f03679b1480063cc7d94"
+                "reference": "61dcb3f7a53a7db332c338a822530cb3be87c37d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ruafozy/php-mersenne-twister/zipball/83ca113aa1e5f924d3b5f03679b1480063cc7d94",
-                "reference": "83ca113aa1e5f924d3b5f03679b1480063cc7d94",
+                "url": "https://api.github.com/repos/ruafozy/php-mersenne-twister/zipball/61dcb3f7a53a7db332c338a822530cb3be87c37d",
+                "reference": "61dcb3f7a53a7db332c338a822530cb3be87c37d",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3.0"
+                "php": ">=7.3.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "~4.1.4"
+                "phpunit/phpunit": "~9"
             },
             "type": "library",
             "autoload": {
@@ -45,9 +45,9 @@
             ],
             "support": {
                 "issues": "https://github.com/ruafozy/php-mersenne-twister/issues",
-                "source": "https://github.com/ruafozy/php-mersenne-twister/tree/master"
+                "source": "https://github.com/ruafozy/php-mersenne-twister/tree/2.0.0"
             },
-            "time": "2015-02-21T10:26:45+00:00"
+            "time": "2023-03-25T19:18:10+00:00"
         }
     ],
     "packages-dev": [
