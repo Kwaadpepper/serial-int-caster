@@ -287,13 +287,8 @@ final class SerialCaster
      */
     private static function rotateLeft(string &$string, int $distance): void
     {
-        $string = str_split($string);
-        for ($i = 0; $i < $distance; $i++) {
-            $value = $string[$i];
-            unset($string[$i]);
-            $string[] = $value;
-        }
-        $string = implode($string);
+        $string = substr($string, $distance) .
+        substr($string, 0, $distance);
     }
 
     /**
@@ -305,11 +300,10 @@ final class SerialCaster
      */
     private static function rotateRight(string &$string, int $distance): void
     {
-        $string = str_split($string);
-        for ($i = 0; $i < $distance; $i++) {
-            array_unshift($string, array_pop($string));
-        }
-        $string = implode($string);
+        $length    = strlen($string);
+        $distance %= $length;
+        $string    = substr($string, $length - $distance) .
+        substr($string, 0, $length - $distance);
     }
 
     /**
