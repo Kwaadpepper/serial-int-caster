@@ -317,11 +317,10 @@ final class SerialCaster
      */
     private static function sumString(string $string): int
     {
-        $o      = 0;
-        $length = \strlen($string);
-        for ($i = $length - 1; $i >= 0; $i--) {
-            $o += ord($string[$i]);
+        $sum = 0;
+        foreach (str_split($string) as $char) {
+            $sum += ord($char);
         }
-        return $o;
+        return $sum;
     }
 }
