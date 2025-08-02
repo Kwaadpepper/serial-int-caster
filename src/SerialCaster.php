@@ -201,19 +201,11 @@ final class SerialCaster
     private static function setupDefaultChars(): void
     {
         // Default chars.
-        $inits = [
-            [ord('a'), ord('z')],
-            [ord('A'), ord('Z')],
-            [ord('0'), ord('9')],
-        ];
+        $defaultChars = implode(range('a', 'z')) .
+        implode(range('A', 'Z')) .
+        implode(range('0', '9'));
 
-        self::$chars = "";
-        foreach ($inits as $init) {
-            for ($i = $init[0]; $i <= $init[1]; $i++) {
-                self::$chars .= chr($i);
-            }
-        }
-        self::$chars = count_chars(self::$chars, 3);
+        self::$chars = count_chars($defaultChars, 3);
     }
 
     /**
