@@ -200,7 +200,7 @@ final class SerialCaster
      */
     private static function setupDefaultChars(): void
     {
-        // Default chars
+        // Default chars.
         $inits = [
             [ord('a'), ord('z')],
             [ord('A'), ord('Z')],
